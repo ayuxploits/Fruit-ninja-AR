@@ -2,52 +2,918 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AR Fruit Ninja</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AR Fruit Ninja - Master Dojo (Standalone Edition)</title>
+  <meta name="description" content="Complete standalone AR Fruit Ninja with MediaPipe AI hand tracking, realistic 3D fruit rendering, 1v1 Dojo Duels, Leaderboards, Shop, and Quests in a single HTML file." />
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Cinzel:wght@700;900&family=Press+Start+2P&family=Yuji+Boku&display=swap" rel="stylesheet" />
 
-  <!-- MediaPipe -->
+  <!-- MediaPipe AI Vision & Camera Utils -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 
-  <!-- React 18 -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <!-- React 18 & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 
-  <!-- Babel (for JSX in-browser) -->
+  <!-- Babel for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
-    *, *::before, *::after { box-sizing: border-box; cursor: crosshair !important; }
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #111; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .btn {
-      border: none; font-family: 'Boogaloo', sans-serif; color: white; border-radius: 9999px;
-      cursor: crosshair; transition: transform 0.1s; font-size: 32px; padding: 16px 36px;
+    :root {
+      --dojo-gold: #f59e0b;
+      --dojo-gold-light: #fde68a;
+      --dojo-wood: #2c1810;
+      --dojo-crimson: #dc2626;
+      --dojo-amber: #d97706;
+      --dojo-cyan: #06b6d4;
+      --dojo-green: #10b981;
     }
-    .btn:hover { transform: scale(1.07); }
-    .btn:active { transform: scale(0.95); }
-    .btn-classic { background: linear-gradient(to bottom, #ffcc00, #ff9900); box-shadow: 0 0 22px #ffcc00; -webkit-text-stroke: 1px #b36b00; }
-    .btn-zen    { background: linear-gradient(to bottom, #33ccff, #0099cc); box-shadow: 0 0 22px #33ccff; -webkit-text-stroke: 1px #006699; }
-    .btn-arcade { background: linear-gradient(to bottom, #ff3366, #cc0033); box-shadow: 0 0 22px #ff3366; -webkit-text-stroke: 1px #990022; }
-    .btn-menu   { background: linear-gradient(to bottom, #66cc33, #339900); box-shadow: 0 0 30px #66cc33; -webkit-text-stroke: 2px #226600; font-size: 34px; padding: 16px 52px; }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0d0907;
+      font-family: 'Boogaloo', cursive, sans-serif;
+      color: #fff;
+      cursor: default;
+    }
+
+    #root {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Dojo Backdrop Patterns */
+    .wood-bg {
+      background: 
+        radial-gradient(circle at 50% 30%, rgba(245, 158, 11, 0.08) 0%, transparent 70%),
+        repeating-linear-gradient(0deg, #1c0e08, #1c0e08 14px, #24130b 14px, #24130b 28px, #170b06 28px, #170b06 42px),
+        linear-gradient(180deg, #2b1308 0%, #150904 100%);
+      background-size: cover;
+    }
+
+    .bamboo-bg {
+      background: 
+        radial-gradient(circle at 50% 40%, rgba(16, 185, 129, 0.12) 0%, transparent 70%),
+        repeating-linear-gradient(90deg, #091a10, #091a10 24px, #0e291a 24px, #0e291a 48px, #06130b 48px, #06130b 72px),
+        linear-gradient(180deg, #0b2415 0%, #040d07 100%);
+    }
+
+    .night-bg {
+      background: 
+        radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.15) 0%, transparent 60%),
+        radial-gradient(circle at 80% 15%, rgba(255, 255, 255, 0.1) 0%, transparent 30%),
+        linear-gradient(180deg, #140b2e 0%, #070312 100%);
+    }
+
+    /* Premium Ninja Buttons */
+    .ninja-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 28px;
+      font-family: 'Boogaloo', cursive;
+      font-size: 26px;
+      letter-spacing: 1px;
+      color: #fff;
+      background: linear-gradient(180deg, #ffb834 0%, #f57c00 50%, #d84315 100%);
+      border: 3px solid #ffe082;
+      border-radius: 9999px;
+      box-shadow: 0 8px 24px rgba(216, 67, 21, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.6), inset 0 -3px 6px rgba(0, 0, 0, 0.4);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(255, 200, 0, 0.5);
+      cursor: pointer;
+      transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+      outline: none;
+    }
+
+    .ninja-btn:hover {
+      transform: translateY(-3px) scale(1.04);
+      filter: brightness(1.15);
+      box-shadow: 0 12px 30px rgba(216, 67, 21, 0.7), inset 0 2px 6px rgba(255, 255, 255, 0.8);
+    }
+
+    .ninja-btn:active {
+      transform: translateY(2px) scale(0.97);
+    }
+
+    .ninja-btn-classic {
+      background: linear-gradient(180deg, #ffca28 0%, #ff8f00 50%, #e65100 100%);
+      border-color: #ffe57f;
+      box-shadow: 0 8px 24px rgba(230, 81, 0, 0.55), inset 0 2px 4px #fff;
+    }
+
+    .ninja-btn-zen {
+      background: linear-gradient(180deg, #26c6da 0%, #00acc1 50%, #006064 100%);
+      border-color: #80deea;
+      box-shadow: 0 8px 24px rgba(0, 150, 136, 0.55), inset 0 2px 4px #fff;
+    }
+
+    .ninja-btn-arcade {
+      background: linear-gradient(180deg, #ec407a 0%, #d81b60 50%, #880e4f 100%);
+      border-color: #f48fb1;
+      box-shadow: 0 8px 24px rgba(216, 27, 96, 0.55), inset 0 2px 4px #fff;
+    }
+
+    .ninja-btn-duel {
+      background: linear-gradient(180deg, #a855f7 0%, #7e22ce 50%, #581c87 100%);
+      border-color: #d8b4fe;
+      box-shadow: 0 8px 24px rgba(126, 34, 206, 0.6), inset 0 2px 4px #fff;
+    }
+
+    .ninja-btn-secondary {
+      background: linear-gradient(180deg, #475569 0%, #334155 50%, #1e293b 100%);
+      border-color: #94a3b8;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+      font-size: 20px;
+      padding: 8px 20px;
+    }
+
+    .icon-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(30, 20, 15, 0.85);
+      border: 2px solid rgba(245, 158, 11, 0.6);
+      color: #fde68a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      transition: all 0.15s ease;
+      outline: none;
+    }
+
+    .icon-btn:hover {
+      transform: scale(1.1);
+      border-color: #f59e0b;
+      background: rgba(45, 30, 20, 0.95);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.6);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.94);
+    }
+
+    /* Dojo Scroll Parchment Modal */
+    .scroll-panel {
+      background: radial-gradient(circle at center, #2e1d14 0%, #1a0f0a 100%);
+      border: 4px solid #b45309;
+      border-radius: 20px;
+      box-shadow: 
+        0 0 0 3px #fde68a,
+        0 20px 50px rgba(0, 0, 0, 0.9),
+        inset 0 0 60px rgba(0, 0, 0, 0.7);
+      position: relative;
+    }
+
+    .scroll-panel::before, .scroll-panel::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border: 3px solid #fde68a;
+    }
+    .scroll-panel::before { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+    .scroll-panel::after { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #b45309; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+
+    /* Custom Range Slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      background: #3c2417;
+      border-radius: 4px;
+      border: 1px solid #78350f;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fde68a 30%, #f59e0b 100%);
+      border: 2px solid #78350f;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+    }
+
+    /* Blade Selector Card */
+    .blade-card {
+      border: 2px solid rgba(245, 158, 11, 0.3);
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(20, 12, 8, 0.7);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .blade-card:hover {
+      border-color: #f59e0b;
+      transform: translateY(-2px);
+      background: rgba(35, 20, 14, 0.85);
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+    }
+    .blade-card.active {
+      border-color: #fde68a;
+      background: linear-gradient(90deg, rgba(180, 83, 9, 0.5) 0%, rgba(35, 20, 14, 0.9) 100%);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+    }
+
+    /* Table styles for leaderboard */
+    .ninja-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .ninja-table th {
+      padding: 10px 14px;
+      font-size: 11px;
+      font-family: '"Press Start 2P"', monospace;
+      color: #fde68a;
+      border-bottom: 2px solid #b45309;
+    }
+    .ninja-table td {
+      padding: 10px 14px;
+      font-size: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .ninja-table tr:hover td {
+      background: rgba(245, 158, 11, 0.1);
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useEffect, useRef, useState } = React;
+    const { useEffect, useRef, useState, useCallback } = React;
 
-    /* ─── helpers ───────────────────────────────────────────── */
+    /* ═══════════════════════════════════════════════════════════════════
+       1. WEB AUDIO SYNTHESIZER
+       ═══════════════════════════════════════════════════════════════════ */
+    class NinjaAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.sfxGain = null;
+        this.musicGain = null;
+        this.sfxVolume = 0.85;
+        this.musicVolume = 0.45;
+        this.musicPlaying = false;
+        this.musicTimer = null;
+        this.noiseBuffer = null;
+      }
+
+      init() {
+        if (this.ctx) return;
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+          this.masterGain = this.ctx.createGain();
+          this.sfxGain = this.ctx.createGain();
+          this.musicGain = this.ctx.createGain();
+
+          this.sfxGain.gain.value = this.sfxVolume;
+          this.musicGain.gain.value = this.musicVolume;
+
+          this.sfxGain.connect(this.masterGain);
+          this.musicGain.connect(this.masterGain);
+          this.masterGain.connect(this.ctx.destination);
+
+          const bufferSize = this.ctx.sampleRate * 2;
+          this.noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const output = this.noiseBuffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+          }
+        } catch (e) {}
+      }
+
+      resume() {
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      setSfxVolume(val) {
+        this.sfxVolume = Math.max(0, Math.min(1, val));
+        if (this.sfxGain && this.ctx) this.sfxGain.gain.setValueAtTime(this.sfxVolume, this.ctx.currentTime);
+      }
+
+      setMusicVolume(val) {
+        this.musicVolume = Math.max(0, Math.min(1, val));
+        if (this.musicGain && this.ctx) this.musicGain.gain.setValueAtTime(this.musicVolume, this.ctx.currentTime);
+      }
+
+      playSwoosh(intensity = 1.0) {
+        if (!this.ctx || this.sfxVolume <= 0) return;
+        try {
+          const now = this.ctx.currentTime;
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.Q.value = 3.5;
+          filter.frequency.setValueAtTime(400, now);
+          filter.frequency.exponentialRampToValueAtTime(1400 + intensity * 800, now + 0.08);
+          filter.frequency.exponentialRampToValueAtTime(250, now + 0.22);
+
+          const gain = this.ctx.createGain();
+          const vol = Math.min(0.7, 0.25 * intensity);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(vol, now + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.sfxGain);
+
+          noise.start(now);
+          noise.stop(now + 0.25);
+        } catch (e) {}
+      }
+
+      playSlice(fruitType = 'watermelon') {
+        if (!this.ctx || this.sfxVolume <= 0) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const oscGain = this.ctx.createGain();
+          let baseFreq = 240;
+          if (fruitType === 'apple' || fruitType === 'coconut') baseFreq = 360;
+          if (fruitType === 'strawberry' || fruitType === 'cherry') baseFreq = 480;
+          if (fruitType === 'watermelon') baseFreq = 180;
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(baseFreq * 1.5, now);
+          osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.4, now + 0.09);
+
+          oscGain.gain.setValueAtTime(0.6, now);
+          oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+          osc.connect(oscGain);
+          oscGain.connect(this.sfxGain);
+          osc.start(now);
+          osc.stop(now + 0.12);
+
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.Q.value = 2.0;
+          filter.frequency.setValueAtTime(1200, now);
+          filter.frequency.linearRampToValueAtTime(400, now + 0.15);
+
+          const squelchGain = this.ctx.createGain();
+          squelchGain.gain.setValueAtTime(0.5, now);
+          squelchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+          noise.connect(filter);
+          filter.connect(squelchGain);
+          squelchGain.connect(this.sfxGain);
+          noise.start(now);
+          noise.stop(now + 0.16);
+
+          if (['dragonfruit', 'star', 'ice', 'diamond'].includes(fruitType)) {
+            this.playChime();
+          }
+        } catch (e) {}
+      }
+
+      playExplosion() {
+        if (!this.ctx || this.sfxVolume <= 0) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const oscGain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(140, now);
+          osc.frequency.exponentialRampToValueAtTime(25, now + 0.8);
+
+          oscGain.gain.setValueAtTime(0.9, now);
+          oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+
+          osc.connect(oscGain);
+          oscGain.connect(this.sfxGain);
+          osc.start(now);
+          osc.stop(now + 0.95);
+
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(1600, now);
+          filter.frequency.linearRampToValueAtTime(80, now + 0.7);
+
+          const noiseGain = this.ctx.createGain();
+          noiseGain.gain.setValueAtTime(0.8, now);
+          noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+
+          noise.connect(filter);
+          filter.connect(noiseGain);
+          noiseGain.connect(this.sfxGain);
+          noise.start(now);
+          noise.stop(now + 0.85);
+        } catch (e) {}
+      }
+
+      playCombo(comboCount = 3) {
+        if (!this.ctx || this.sfxVolume <= 0) return;
+        try {
+          const now = this.ctx.currentTime;
+          const pentatonic = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25, 783.99];
+          const index = Math.min(pentatonic.length - 1, Math.max(0, comboCount - 2));
+          const freq = pentatonic[index];
+
+          [1, 2, 3].forEach((harmonic, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = idx === 0 ? 'sine' : 'triangle';
+            osc.frequency.setValueAtTime(freq * harmonic, now);
+            gain.gain.setValueAtTime(0.4 / (idx + 1), now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5 + idx * 0.2);
+            osc.connect(gain);
+            gain.connect(this.sfxGain);
+            osc.start(now);
+            osc.stop(now + 0.8);
+          });
+        } catch (e) {}
+      }
+
+      playChime() {
+        if (!this.ctx || this.sfxVolume <= 0) return;
+        try {
+          const now = this.ctx.currentTime;
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + i * 0.05);
+            gain.gain.setValueAtTime(0.3, now + i * 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.4);
+            osc.connect(gain);
+            gain.connect(this.sfxGain);
+            osc.start(now + i * 0.05);
+            osc.stop(now + i * 0.05 + 0.45);
+          });
+        } catch (e) {}
+      }
+
+      playPowerup(type) {
+        if (!this.ctx || this.sfxVolume <= 0) return;
+        try {
+          const now = this.ctx.currentTime;
+          const notes = type === 'freeze' ? [880, 1174, 1318, 1760] : [440, 554.37, 659.25, 880];
+          notes.forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type === 'freeze' ? 'sine' : 'triangle';
+            osc.frequency.setValueAtTime(f, now + i * 0.06);
+            gain.gain.setValueAtTime(0.35, now + i * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.5);
+            osc.connect(gain);
+            gain.connect(this.sfxGain);
+            osc.start(now + i * 0.06);
+            osc.stop(now + i * 0.06 + 0.6);
+          });
+        } catch (e) {}
+      }
+
+      playGong() {
+        if (!this.ctx || this.sfxVolume <= 0) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(95, now);
+          osc.frequency.exponentialRampToValueAtTime(45, now + 1.8);
+          gain.gain.setValueAtTime(0.8, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+          osc.connect(gain);
+          gain.connect(this.sfxGain);
+          osc.start(now);
+          osc.stop(now + 1.9);
+        } catch (e) {}
+      }
+
+      playClick() {
+        if (!this.ctx || this.sfxVolume <= 0) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(200, now + 0.04);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+          osc.connect(gain);
+          gain.connect(this.sfxGain);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        } catch (e) {}
+      }
+
+      startMusic() {
+        if (this.musicPlaying) return;
+        this.musicPlaying = true;
+        this.scheduleNextNote();
+      }
+
+      stopMusic() {
+        this.musicPlaying = false;
+        if (this.musicTimer) clearTimeout(this.musicTimer);
+      }
+
+      scheduleNextNote() {
+        if (!this.musicPlaying || !this.ctx) return;
+        try {
+          const scale = [196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
+          const freq = scale[Math.floor(Math.random() * scale.length)];
+          const now = this.ctx.currentTime;
+
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = Math.random() > 0.4 ? 'sine' : 'triangle';
+          osc.frequency.setValueAtTime(freq, now);
+
+          const dur = 1.2 + Math.random() * 1.5;
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+          osc.connect(gain);
+          gain.connect(this.musicGain);
+          osc.start(now);
+          osc.stop(now + dur + 0.1);
+
+          const nextDelay = (400 + Math.random() * 900);
+          this.musicTimer = setTimeout(() => this.scheduleNextNote(), nextDelay);
+        } catch (e) {}
+      }
+    }
+
+    const sound = new NinjaAudioEngine();
+
+    /* ═══════════════════════════════════════════════════════════════════
+       2. BLADES & SHOP CONFIGURATION
+       ═══════════════════════════════════════════════════════════════════ */
+    const BLADES = {
+      classic: { name: 'Original Katana', price: 0, desc: 'Traditional forged steel with golden embers', outerGlow: '#f59e0b', innerColor: '#ffffff', icon: '⚔️' },
+      frost:   { name: 'Frost Edge',      price: 250, desc: 'Forged in glacier peaks; leaves crystalline frost trails', outerGlow: '#38bdf8', innerColor: '#e0f2fe', icon: '❄️' },
+      sakura:  { name: 'Shadow Sakura',   price: 400, desc: 'Enchanted cherry blossom blade with petals and violet mist', outerGlow: '#c084fc', innerColor: '#fdf4ff', icon: '🌸' },
+      cyber:   { name: 'Cyber Saber',     price: 650, desc: 'High-frequency plasma edge with electric green neon discharge', outerGlow: '#4ade80', innerColor: '#22d3ee', icon: '⚡' },
+      inferno: { name: 'Dragon Inferno',  price: 900, desc: 'Molten dragon core blade surrounded by raging crimson fire', outerGlow: '#ef4444', innerColor: '#ffedd5', icon: '🔥' },
+      prism:   { name: 'Rainbow Prism',   price: 1200, desc: 'Refracts heavenly light across the chromatic spectrum', outerGlow: 'rainbow', innerColor: '#ffffff', icon: '🌈' },
+    };
+
+    /* ═══════════════════════════════════════════════════════════════════
+       3. 3D REALISTIC VECTOR FRUIT RENDERING ENGINE
+       ═══════════════════════════════════════════════════════════════════ */
+    const FRUITS_CONFIG = {
+      watermelon: { name: 'Watermelon', radius: 46, pts: 1, rind: '#15803d', flesh: '#ef4444', seeds: '#18181b', juice: '#dc2626' },
+      orange:     { name: 'Orange',     radius: 40, pts: 1, rind: '#f97316', flesh: '#fb923c', seeds: '#fff7ed', juice: '#ea580c' },
+      apple:      { name: 'Apple',      radius: 38, pts: 1, rind: '#dc2626', flesh: '#fef08a', seeds: '#451a03', juice: '#b91c1c' },
+      banana:     { name: 'Banana',     radius: 42, pts: 1, rind: '#eab308', flesh: '#fef9c3', seeds: '#713f12', juice: '#ca8a04' },
+      pineapple:  { name: 'Pineapple',  radius: 52, pts: 2, rind: '#d97706', flesh: '#fde047', seeds: '#15803d', juice: '#b45309' },
+      strawberry: { name: 'Strawberry', radius: 32, pts: 2, rind: '#e11d48', flesh: '#fda4af', seeds: '#fef08a', juice: '#be123c' },
+      coconut:    { name: 'Coconut',    radius: 44, pts: 2, rind: '#5a3825', flesh: '#ffffff', seeds: '#3f2212', juice: '#e2e8f0' },
+      dragonfruit:{ name: 'Dragonfruit',radius: 50, pts: 5, rind: '#ec4899', flesh: '#ffffff', seeds: '#18181b', juice: '#db2777' },
+      star:       { name: 'Star Fruit', radius: 44, pts: 10,rind: '#eab308', flesh: '#fef08a', seeds: '#ca8a04', juice: '#facc15', special: true },
+      ice:        { name: 'Freeze Berry',radius: 44, pts: 5, rind: '#38bdf8', flesh: '#e0f2fe', seeds: '#0284c7', juice: '#0ea5e9', special: true },
+      diamond:    { name: 'Double Gem', radius: 42, pts: 5, rind: '#a855f7', flesh: '#f3e8ff', seeds: '#7e22ce', juice: '#9333ea', special: true },
+      bomb:       { name: 'Bomb',       radius: 46, pts: 0, rind: '#1f2937', flesh: '#111827', seeds: '#ef4444', juice: '#f97316', isBomb: true },
+    };
+
+    function drawFruitWhole(ctx, fruit) {
+      const { type, radius } = fruit;
+      const cfg = FRUITS_CONFIG[type] || FRUITS_CONFIG.watermelon;
+
+      ctx.save();
+      ctx.shadowColor = cfg.juice;
+      ctx.shadowBlur = cfg.special ? 28 : 14;
+
+      if (type === 'watermelon') {
+        const bgGrad = ctx.createRadialGradient(-radius*0.35, -radius*0.35, radius*0.1, 0, 0, radius);
+        bgGrad.addColorStop(0, '#86efac');
+        bgGrad.addColorStop(0.35, '#22c55e');
+        bgGrad.addColorStop(0.7, '#15803d');
+        bgGrad.addColorStop(1, '#052e16');
+        ctx.fillStyle = bgGrad;
+        ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
+
+        const sunGrad = ctx.createRadialGradient(-radius*0.4, radius*0.35, 0, -radius*0.4, radius*0.35, radius*0.55);
+        sunGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
+        sunGrad.addColorStop(0.8, 'rgba(254, 240, 138, 0)');
+        ctx.fillStyle = sunGrad;
+        ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
+
+        ctx.save(); ctx.clip();
+        ctx.strokeStyle = '#022c22'; ctx.fillStyle = '#022c22';
+        for (let i = -4; i <= 4; i++) {
+          const sx = i * (radius * 0.26);
+          const w = 7 + (4 - Math.abs(i)) * 1.5;
+          ctx.lineWidth = w;
+          ctx.beginPath(); ctx.moveTo(sx, -radius);
+          ctx.bezierCurveTo(sx + (i % 2 === 0 ? 14 : -14), -radius * 0.4, sx + (i % 2 === 0 ? -12 : 12), radius * 0.4, sx * 0.85, radius);
+          ctx.stroke();
+          for (let j = -2; j <= 2; j++) {
+            const by = j * (radius * 0.32);
+            ctx.beginPath(); ctx.ellipse(sx + (j % 2 === 0 ? 6 : -6), by, w * 0.6, w * 1.2, i * 0.15, 0, Math.PI * 2); ctx.fill();
+          }
+        }
+        ctx.restore();
+
+        ctx.strokeStyle = '#78350f'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(0, -radius + 2); ctx.quadraticCurveTo(8, -radius - 10, 2, -radius - 16); ctx.stroke();
+        ctx.fillStyle = '#14532d'; ctx.beginPath(); ctx.arc(0, -radius + 2, 5, 0, Math.PI * 2); ctx.fill();
+
+      } else if (type === 'orange') {
+        const grad = ctx.createRadialGradient(-radius*0.35, -radius*0.35, radius*0.1, 0, 0, radius);
+        grad.addColorStop(0, '#fef08a');
+        grad.addColorStop(0.25, '#fb923c');
+        grad.addColorStop(0.65, '#ea580c');
+        grad.addColorStop(0.9, '#c2410c');
+        grad.addColorStop(1, '#7c2d12');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
+
+        ctx.save(); ctx.clip();
+        for (let i = 0; i < 35; i++) {
+          const ang = (i * 1.37) * Math.PI * 2;
+          const r = Math.sqrt((i + 1) / 35) * (radius * 0.85);
+          ctx.fillStyle = 'rgba(124, 45, 18, 0.45)'; ctx.fillRect(Math.cos(ang) * r, Math.sin(ang) * r, 2, 2);
+          ctx.fillStyle = 'rgba(254, 240, 138, 0.35)'; ctx.fillRect(Math.cos(ang) * r - 1, Math.sin(ang) * r - 1, 1.5, 1.5);
+        }
+        ctx.restore();
+
+        ctx.fillStyle = '#15803d';
+        for (let a = 0; a < 5; a++) {
+          const ang = (a / 5) * Math.PI * 2 - Math.PI / 2;
+          ctx.beginPath(); ctx.moveTo(0, -radius + 3); ctx.lineTo(Math.cos(ang) * 9, -radius + 3 + Math.sin(ang) * 9); ctx.lineTo(Math.cos(ang + 0.5) * 4, -radius + 3 + Math.sin(ang + 0.5) * 4); ctx.fill();
+        }
+        ctx.fillStyle = '#78350f'; ctx.beginPath(); ctx.arc(0, -radius + 3, 2.5, 0, Math.PI * 2); ctx.fill();
+
+      } else if (type === 'apple') {
+        ctx.beginPath();
+        ctx.moveTo(0, -radius * 0.7);
+        ctx.bezierCurveTo(radius * 0.65, -radius * 1.15, radius * 1.25, -radius * 0.3, radius * 0.95, radius * 0.55);
+        ctx.bezierCurveTo(radius * 0.75, radius * 1.05, radius * 0.25, radius * 1.02, 0, radius * 0.85);
+        ctx.bezierCurveTo(-radius * 0.25, radius * 1.02, -radius * 0.75, radius * 1.05, -radius * 0.95, radius * 0.55);
+        ctx.bezierCurveTo(-radius * 1.25, -radius * 0.3, -radius * 0.65, -radius * 1.15, 0, -radius * 0.7);
+        ctx.closePath();
+
+        const grad = ctx.createRadialGradient(-radius*0.35, -radius*0.35, radius*0.1, 0, 0, radius * 1.1);
+        grad.addColorStop(0, '#fef08a');
+        grad.addColorStop(0.2, '#f87171');
+        grad.addColorStop(0.6, '#dc2626');
+        grad.addColorStop(0.85, '#991b1b');
+        grad.addColorStop(1, '#450a0a');
+        ctx.fillStyle = grad; ctx.fill();
+
+        ctx.save(); ctx.clip();
+        ctx.strokeStyle = 'rgba(153, 27, 27, 0.4)'; ctx.lineWidth = 2;
+        for (let i = -5; i <= 5; i++) {
+          ctx.beginPath(); ctx.moveTo(i * 6, -radius * 0.7); ctx.quadraticCurveTo(i * 9, 0, i * 4, radius * 0.85); ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.strokeStyle = '#5a3825'; ctx.lineWidth = 4.5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(0, -radius * 0.68); ctx.quadraticCurveTo(8, -radius * 1.1, 14, -radius * 1.35); ctx.stroke();
+        ctx.fillStyle = '#16a34a'; ctx.beginPath(); ctx.ellipse(12, -radius * 1.05, 12, 5, Math.PI / 4, 0, Math.PI * 2); ctx.fill();
+
+      } else if (type === 'banana') {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(-radius * 0.95, radius * 0.25);
+        ctx.bezierCurveTo(-radius * 0.5, -radius * 0.75, radius * 0.5, -radius * 0.75, radius * 0.95, radius * 0.25);
+        ctx.bezierCurveTo(radius * 0.65, -radius * 0.35, -radius * 0.65, -radius * 0.35, -radius * 0.95, radius * 0.25);
+        ctx.closePath();
+
+        const grad = ctx.createLinearGradient(0, -radius * 0.8, 0, radius * 0.3);
+        grad.addColorStop(0, '#fef08a');
+        grad.addColorStop(0.35, '#eab308');
+        grad.addColorStop(0.85, '#ca8a04');
+        grad.addColorStop(1, '#854d0e');
+        ctx.fillStyle = grad; ctx.fill();
+
+        ctx.strokeStyle = '#78350f'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-radius * 0.95, radius * 0.25); ctx.lineTo(-radius * 1.15, radius * 0.35); ctx.stroke();
+        ctx.restore();
+
+      } else if (type === 'pineapple') {
+        const grad = ctx.createRadialGradient(0, 0, radius * 0.2, 0, 0, radius * 1.1);
+        grad.addColorStop(0, '#fde047');
+        grad.addColorStop(0.45, '#d97706');
+        grad.addColorStop(0.85, '#b45309');
+        grad.addColorStop(1, '#78350f');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.ellipse(0, 6, radius * 0.88, radius * 1.05, 0, 0, Math.PI * 2); ctx.fill();
+
+        ctx.save(); ctx.clip();
+        for (let row = -3; row <= 3; row++) {
+          const ry = row * 14 + 6;
+          for (let col = -3; col <= 3; col++) {
+            const rx = col * 18 + (row % 2 === 0 ? 9 : 0);
+            ctx.fillStyle = '#d97706';
+            ctx.beginPath(); ctx.moveTo(rx, ry - 7); ctx.lineTo(rx + 8, ry); ctx.lineTo(rx, ry + 7); ctx.lineTo(rx - 8, ry); ctx.closePath(); ctx.fill();
+          }
+        }
+        ctx.restore();
+
+        ctx.fillStyle = '#15803d';
+        for (let i = -3; i <= 3; i++) {
+          ctx.beginPath(); ctx.moveTo(i * 6, -radius + 4); ctx.lineTo(i * 10, -radius - 18 - Math.abs(i)*3); ctx.lineTo(i * 6 + 6, -radius + 4); ctx.fill();
+        }
+
+      } else if (type === 'strawberry') {
+        ctx.beginPath();
+        ctx.moveTo(0, radius * 1.05);
+        ctx.bezierCurveTo(-radius * 1.25, radius * 0.1, -radius * 0.95, -radius * 0.95, 0, -radius * 0.8);
+        ctx.bezierCurveTo(radius * 0.95, -radius * 0.95, radius * 1.25, radius * 0.1, 0, radius * 1.05);
+        ctx.closePath();
+
+        const grad = ctx.createRadialGradient(-radius*0.3, -radius*0.3, radius*0.1, 0, 0, radius * 1.1);
+        grad.addColorStop(0, '#fb7185');
+        grad.addColorStop(0.3, '#f43f5e');
+        grad.addColorStop(0.7, '#e11d48');
+        grad.addColorStop(0.9, '#be123c');
+        grad.addColorStop(1, '#881337');
+        ctx.fillStyle = grad; ctx.fill();
+
+        ctx.fillStyle = '#fef08a';
+        for (let row = -2; row <= 3; row++) {
+          const sy = row * 10 - 4;
+          for (let col = -2; col <= 2; col++) {
+            ctx.fillRect(col * 12 + (row % 2 === 0 ? 5 : 0), sy, 2, 3);
+          }
+        }
+
+        ctx.fillStyle = '#16a34a';
+        ctx.beginPath(); ctx.arc(0, -radius * 0.78, 10, 0, Math.PI, true); ctx.fill();
+
+      } else if (type === 'coconut') {
+        const grad = ctx.createRadialGradient(-radius*0.35, -radius*0.35, radius*0.2, 0, 0, radius);
+        grad.addColorStop(0, '#78350f');
+        grad.addColorStop(0.5, '#5a3825');
+        grad.addColorStop(0.85, '#3f2212');
+        grad.addColorStop(1, '#1c0a02');
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = '#0f0502';
+        ctx.beginPath(); ctx.arc(-8, -10, 4, 0, Math.PI*2); ctx.arc(8, -10, 4, 0, Math.PI*2); ctx.arc(0, -2, 4, 0, Math.PI*2); ctx.fill();
+
+      } else if (type === 'dragonfruit') {
+        const grad = ctx.createRadialGradient(0, 0, radius * 0.2, 0, 0, radius * 1.05);
+        grad.addColorStop(0, '#f472b6');
+        grad.addColorStop(0.4, '#db2777');
+        grad.addColorStop(0.8, '#be185d');
+        grad.addColorStop(1, '#831843');
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.ellipse(0, 0, radius * 0.88, radius * 1.05, 0, 0, Math.PI * 2); ctx.fill();
+
+        for (let s = 0; s < 7; s++) {
+          const ang = (s / 7) * Math.PI * 2;
+          ctx.fillStyle = '#22c55e';
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(ang)*radius*0.8, Math.sin(ang)*radius*0.8);
+          ctx.lineTo(Math.cos(ang)*radius*1.2, Math.sin(ang)*radius*1.2);
+          ctx.lineTo(Math.cos(ang+0.4)*radius*0.8, Math.sin(ang+0.4)*radius*0.8);
+          ctx.fill();
+        }
+
+      } else if (type === 'star') {
+        const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, radius);
+        grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.3, '#fef08a'); grad.addColorStop(0.7, '#eab308');
+        ctx.fillStyle = grad; ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+          const a1 = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+          const a2 = a1 + (2 * Math.PI) / 10;
+          if (i === 0) ctx.moveTo(Math.cos(a1) * radius, Math.sin(a1) * radius);
+          else ctx.lineTo(Math.cos(a1) * radius, Math.sin(a1) * radius);
+          ctx.lineTo(Math.cos(a2) * radius * 0.45, Math.sin(a2) * radius * 0.45);
+        }
+        ctx.closePath(); ctx.fill();
+
+      } else if (type === 'ice') {
+        const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, radius);
+        grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.4, '#bae6fd'); grad.addColorStop(0.8, '#38bdf8');
+        ctx.fillStyle = grad; ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(-radius * 0.8, -radius * 0.8, radius * 1.6, radius * 1.6, 12);
+        else ctx.rect(-radius * 0.8, -radius * 0.8, radius * 1.6, radius * 1.6);
+        ctx.fill();
+
+      } else if (type === 'diamond') {
+        const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, radius);
+        grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.3, '#f3e8ff'); grad.addColorStop(0.7, '#c084fc');
+        ctx.fillStyle = grad; ctx.beginPath();
+        ctx.moveTo(0, -radius * 0.95); ctx.lineTo(radius * 0.85, -radius * 0.35); ctx.lineTo(radius * 0.55, radius * 0.95);
+        ctx.lineTo(-radius * 0.55, radius * 0.95); ctx.lineTo(-radius * 0.85, -radius * 0.35); ctx.closePath(); ctx.fill();
+
+      } else if (type === 'bomb') {
+        const grad = ctx.createRadialGradient(-radius*0.35, -radius*0.35, radius*0.1, 0, 0, radius);
+        grad.addColorStop(0, '#64748b'); grad.addColorStop(0.4, '#334155'); grad.addColorStop(0.75, '#1e293b');
+        grad.addColorStop(1, '#020617');
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = '#d97706'; ctx.fillRect(-7, -radius - 7, 14, 9);
+        ctx.strokeStyle = '#b45309'; ctx.lineWidth = 4.5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(0, -radius - 7); ctx.quadraticCurveTo(12, -radius - 18, 18, -radius - 26); ctx.stroke();
+
+        const sparkSize = 8 + Math.random() * 8;
+        ctx.fillStyle = Math.random() > 0.5 ? '#fef08a' : '#f97316';
+        ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 24;
+        ctx.beginPath(); ctx.arc(18 + (Math.random()*4-2), -radius - 26 + (Math.random()*4-2), sparkSize, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = '#ef4444'; ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('💣', 0, 3);
+      }
+
+      // Specular highlight gleam
+      if (type !== 'bomb' && type !== 'ice' && type !== 'diamond') {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.beginPath(); ctx.ellipse(-radius * 0.35, -radius * 0.35, radius * 0.28, radius * 0.14, -Math.PI / 4, 0, Math.PI * 2); ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawFruitHalf(ctx, fruit, halfIndex) {
+      const { type, radius } = fruit;
+      const cfg = FRUITS_CONFIG[type] || FRUITS_CONFIG.watermelon;
+
+      ctx.save();
+      ctx.beginPath();
+      if (halfIndex === 0) ctx.rect(-radius * 2.5, -radius * 2.5, radius * 5, radius * 2.5);
+      else ctx.rect(-radius * 2.5, 0, radius * 5, radius * 2.5);
+      ctx.clip();
+
+      drawFruitWhole(ctx, fruit);
+
+      const cutH = radius * 0.32;
+      const flatY = halfIndex === 0 ? -1 : 1;
+
+      if (type === 'watermelon') {
+        ctx.fillStyle = '#15803d'; ctx.beginPath(); ctx.ellipse(0, 0, radius * 0.98, cutH, 0, halfIndex === 0 ? Math.PI : 0, halfIndex === 0 ? 0 : Math.PI); ctx.fill();
+        ctx.fillStyle = '#bbf7d0'; ctx.beginPath(); ctx.ellipse(0, flatY * 2, radius * 0.92, cutH * 0.9, 0, halfIndex === 0 ? Math.PI : 0, halfIndex === 0 ? 0 : Math.PI); ctx.fill();
+        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(0, flatY * 3, radius * 0.86, cutH * 0.82, 0, halfIndex === 0 ? Math.PI : 0, halfIndex === 0 ? 0 : Math.PI); ctx.fill();
+        ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.ellipse(0, flatY * 4, radius * 0.8, cutH * 0.74, 0, halfIndex === 0 ? Math.PI : 0, halfIndex === 0 ? 0 : Math.PI); ctx.fill();
+
+        ctx.fillStyle = '#09090b';
+        [-0.5, -0.2, 0.2, 0.5].forEach(sa => {
+          ctx.beginPath(); ctx.ellipse(sa * radius * 0.9, flatY * (cutH * 0.45), 2.5, 4, sa, 0, Math.PI * 2); ctx.fill();
+        });
+      } else if (type === 'orange') {
+        ctx.fillStyle = '#ea580c'; ctx.beginPath(); ctx.ellipse(0, 0, radius * 0.98, cutH, 0, halfIndex === 0 ? Math.PI : 0, halfIndex === 0 ? 0 : Math.PI); ctx.fill();
+        ctx.fillStyle = '#fff7ed'; ctx.beginPath(); ctx.ellipse(0, flatY * 2, radius * 0.9, cutH * 0.88, 0, halfIndex === 0 ? Math.PI : 0, halfIndex === 0 ? 0 : Math.PI); ctx.fill();
+        ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.ellipse(0, flatY * 3, radius * 0.82, cutH * 0.78, 0, halfIndex === 0 ? Math.PI : 0, halfIndex === 0 ? 0 : Math.PI); ctx.fill();
+      } else if (type === 'apple') {
+        ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.ellipse(0, 0, radius * 0.98, cutH, 0, halfIndex === 0 ? Math.PI : 0, halfIndex === 0 ? 0 : Math.PI); ctx.fill();
+        ctx.fillStyle = '#fefce8'; ctx.beginPath(); ctx.ellipse(0, flatY * 2, radius * 0.92, cutH * 0.85, 0, halfIndex === 0 ? Math.PI : 0, halfIndex === 0 ? 0 : Math.PI); ctx.fill();
+        ctx.fillStyle = '#78350f'; ctx.beginPath(); ctx.ellipse(-5, flatY * 3, 2, 4, -0.3, 0, Math.PI*2); ctx.ellipse(5, flatY * 3, 2, 4, 0.3, 0, Math.PI*2); ctx.fill();
+      } else {
+        ctx.fillStyle = cfg.flesh || '#ffffff'; ctx.beginPath(); ctx.ellipse(0, 0, radius * 0.95, cutH, 0, halfIndex === 0 ? Math.PI : 0, halfIndex === 0 ? 0 : Math.PI); ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
     function lineCircleIntersection(x1, y1, x2, y2, cx, cy, r) {
       const dx = x2 - x1, dy = y2 - y1;
       const fx = x1 - cx, fy = y1 - cy;
       const a = dx*dx + dy*dy;
-      const b = 2*(fx*dx + fy*dy);
+      if (a < 0.0001) return false;
+      const b = 2 * (fx*dx + fy*dy);
       const c = fx*fx + fy*fy - r*r;
       let disc = b*b - 4*a*c;
       if (disc < 0) return false;
@@ -57,664 +923,1268 @@
       return (t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1);
     }
 
-    /* ─── data ──────────────────────────────────────────────── */
-    const colors = {
-      watermelon: ['#ff3333','#33cc33'], orange: ['#ff9900','#ffcc00'],
-      apple: ['#ff3333','#ccff33'],      banana: ['#ffff33','#ffffcc'],
-      lemon: ['#ffff33','#ccff33'],      bomb: ['#ff0000','#ff9900','#ffff00','#333333'],
-      pineapple: ['#FFD700','#FF9900','#33AA00'], mango: ['#FF9900','#FFD700','#FF6600'],
-      strawberry: ['#FF3366','#FF6699','#FFFFFF'], peach: ['#FFCC99','#FF9966','#FFB347'],
-      grapes: ['#9933FF','#CC66FF','#6600CC'],    kiwi: ['#66CC33','#33AA00','#A0522D'],
-      cherry: ['#CC0000','#FF0033','#FFB6C1'],    blueberry: ['#3366FF','#6699FF','#0000CC'],
-      star: ['#FFD700','#FFFFFF','#FFCC00','#FF9900'],
-      ice: ['#99CCFF','#FFFFFF','#66AAFF'],
-      diamond: ['#99CCFF','#FFFFFF','#FFD700'],
-    };
-
-    const emojis = {
-      watermelon:'🍉', orange:'🍊', apple:'🍎', banana:'🍌', lemon:'🍋', bomb:'💣',
-      pineapple:'🍍', mango:'🥭', strawberry:'🍓', peach:'🍑', grapes:'🍇', kiwi:'🥝',
-      cherry:'🍒', blueberry:'🫐', star:'⭐', ice:'🧊', diamond:'💎',
-    };
-
-    const fruitGlow = {
-      watermelon:'#FF3333', orange:'#FF9900', apple:'#FF3333',
-      banana:'#FFFF33',     lemon:'#FFFF33',  bomb:'#FF4400',
-      pineapple:'#FFD700',  mango:'#FF9900',  strawberry:'#FF3366',
-      peach:'#FFCC99',      grapes:'#9933FF', kiwi:'#66CC33',
-      cherry:'#CC0000',     blueberry:'#3366FF', star:'#FFD700',
-      ice:'#99CCFF',        diamond:'#99CCFF',
-    };
-
-    /* ─── component ─────────────────────────────────────────── */
-    function Game() {
-      const videoRef  = useRef(null);
+    /* ═══════════════════════════════════════════════════════════════════
+       4. STANDALONE REACT GAME APPLICATION
+       ═══════════════════════════════════════════════════════════════════ */
+    function ARFruitNinjaApp() {
+      const videoRef = useRef(null);
       const canvasRef = useRef(null);
-      const reqRef    = useRef(0);
+      const reqRef = useRef(0);
 
-      const [isReady, setIsReady]   = useState(false);
-      const [camErr,  setCamErr]    = useState(false);
-
-      // game state refs (not React state — updated every frame)
-      const gamePhase = useRef('idle');   // idle | playing | gameover
-      const gameMode  = useRef('classic'); // classic | zen | arcade
-      const score     = useRef(0);
-      const lives     = useRef(3);
-      const highScore = useRef(parseInt(localStorage.getItem('fruitNinjaHS') || '0', 10));
-
-      const stats = useRef({ sliced:0, missed:0, maxCombo:0, bombsHit:0 });
-
-      const [ui, setUi] = useState({
-        phase:'idle', mode:'classic', score:0, lives:3, bombsSliced:0,
-        highScore: parseInt(localStorage.getItem('fruitNinjaHS') || '0', 10),
-        stats: { sliced:0, missed:0, maxCombo:0, bombsHit:0 },
+      // Local State & Persistence
+      const [nickname, setNickname] = useState(() => localStorage.getItem('fn_nickname') || 'Master Ninja');
+      const [coins, setCoins] = useState(() => parseInt(localStorage.getItem('fn_coins') || '200', 10));
+      const [userLevel, setUserLevel] = useState(() => parseInt(localStorage.getItem('fn_level') || '1', 10));
+      const [userXp, setUserXp] = useState(() => parseInt(localStorage.getItem('fn_xp') || '0', 10));
+      const [activeBlade, setActiveBlade] = useState(() => localStorage.getItem('fn_blade') || 'classic');
+      const [dojoBg, setDojoBg] = useState(() => localStorage.getItem('fn_dojo') || 'wood');
+      const [unlockedItems, setUnlockedItems] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('fn_unlocked') || '["classic", "wood"]'); } catch(e) { return ['classic', 'wood']; }
       });
 
-      // object arrays
-      const fruits       = useRef([]);
-      const particles    = useRef([]);
-      const floatTexts   = useRef([]);
-      const stains       = useRef([]);
-      const flashes      = useRef([]);
-      const trail        = useRef([[], []]);   // one trail per hand
-      const lastDetTimes = useRef([0, 0]);
+      // Modals
+      const [showLeaderboard, setShowLeaderboard] = useState(false);
+      const [showShop, setShowShop] = useState(false);
+      const [showQuests, setShowQuests] = useState(false);
+      const [showDuelModal, setShowDuelModal] = useState(false);
+      const [showSettings, setShowSettings] = useState(false);
+      const [isPaused, setIsPaused] = useState(false);
 
-      // counters / timers
-      const combo             = useRef(0);
-      const lastSliceT        = useRef(0);
-      const spawnInterval     = useRef(2000);
-      const lastSpawnT        = useRef(0);
-      const bombFlashT        = useRef(0);
-      const bombsSliced       = useRef(0);
-      const arcadeStart       = useRef(0);
-      const fever             = useRef(false);
-      const feverT            = useRef(0);
-      const freezeActive      = useRef(false);
-      const freezeT           = useRef(0);
-      const doubleActive      = useRef(false);
-      const doubleT           = useRef(0);
-      const shakeT            = useRef(0);
+      // Leaderboard
+      const [lbMode, setLbMode] = useState('classic');
+      const [leaderboards, setLeaderboards] = useState(() => {
+        const defaultLb = {
+          classic: [
+            { rank: 1, username: 'MasterSensei', score: 850, maxCombo: 12, sliced: 240 },
+            { rank: 2, username: 'ShadowBlade', score: 720, maxCombo: 9, sliced: 210 },
+            { rank: 3, username: 'SakuraNinja', score: 580, maxCombo: 8, sliced: 175 },
+          ],
+          zen: [
+            { rank: 1, username: 'DragonKatana', score: 940, maxCombo: 16, sliced: 310 },
+            { rank: 2, username: 'ZenMaster', score: 810, maxCombo: 11, sliced: 260 },
+          ],
+          arcade: [
+            { rank: 1, username: 'CyberSlicer', score: 1120, maxCombo: 21, sliced: 380 },
+            { rank: 2, username: 'StormNinja', score: 950, maxCombo: 17, sliced: 320 },
+          ]
+        };
+        try {
+          const stored = localStorage.getItem('fn_lb');
+          return stored ? JSON.parse(stored) : defaultLb;
+        } catch (e) {
+          return defaultLb;
+        }
+      });
 
-      const syncUi = () => setUi({
-        phase: gamePhase.current, mode: gameMode.current,
-        score: score.current, lives: lives.current,
-        bombsSliced: bombsSliced.current, highScore: highScore.current,
+      // Quests
+      const [quests, setQuests] = useState(() => {
+        const defaultQ = [
+          { id: 'q_slice_50', title: 'Fruit Harvester', desc: 'Slice 50 total fruits', target: 50, current: 0, rewardCoins: 100, completed: false, claimed: false },
+          { id: 'q_combo_5', title: 'Combo Novice', desc: 'Achieve a 5x Combo', target: 5, current: 0, rewardCoins: 150, completed: false, claimed: false },
+          { id: 'q_play_zen', title: 'Inner Peace', desc: 'Complete a match in Zen Mode', target: 1, current: 0, rewardCoins: 100, completed: false, claimed: false },
+          { id: 'q_score_300', title: 'Master Strike', desc: 'Score 300+ in a single match', target: 300, current: 0, rewardCoins: 200, completed: false, claimed: false },
+          { id: 'q_crit_5', title: 'Critical Accuracy', desc: 'Land 5 Critical Strikes', target: 5, current: 0, rewardCoins: 250, completed: false, claimed: false },
+        ];
+        try {
+          const stored = localStorage.getItem('fn_quests');
+          return stored ? JSON.parse(stored) : defaultQ;
+        } catch(e) {
+          return defaultQ;
+        }
+      });
+
+      // Simulated 1v1 Arena Duel
+      const [duelState, setDuelState] = useState({
+        inDuel: false,
+        opponentName: 'Shadow Ronin (AI)',
+        opponentScore: 0,
+        opponentCombo: 0,
+        winner: null,
+      });
+
+      // UI Controls
+      const [camOpacity, setCamOpacity] = useState(0.4);
+      const [showSkeleton, setShowSkeleton] = useState(true);
+      const [sfxVol, setSfxVol] = useState(0.85);
+      const [bgmVol, setBgmVol] = useState(0.45);
+
+      // Core Game Engine State
+      const gamePhase = useRef('idle'); // idle | playing | gameover
+      const gameMode = useRef('classic'); // classic | zen | arcade | duel
+      const score = useRef(0);
+      const lives = useRef(3);
+      const combo = useRef(0);
+      const lastSliceT = useRef(0);
+      const stats = useRef({ sliced: 0, missed: 0, maxCombo: 0, bombsHit: 0, criticals: 0 });
+
+      // Powerups
+      const freezeActive = useRef(false);
+      const freezeTimer = useRef(0);
+      const frenzyActive = useRef(false);
+      const frenzyTimer = useRef(0);
+      const doubleActive = useRef(false);
+      const doubleTimer = useRef(0);
+      const shakeTimer = useRef(0);
+
+      // Timers & Spawning
+      const arcadeTimer = useRef(60);
+      const zenTimer = useRef(90);
+      const lastSpawnT = useRef(0);
+      const spawnInterval = useRef(1600);
+      const lastFrameT = useRef(performance.now());
+
+      // Entity Collections
+      const fruits = useRef([]);
+      const particles = useRef([]);
+      const floatTexts = useRef([]);
+      const stains = useRef([]);
+      const slashMarks = useRef([]);
+      const bladeTrails = useRef([[], []]);
+      const handLandmarksRef = useRef([]);
+      const lastHandPoints = useRef([{x:0, y:0}, {x:0, y:0}]);
+      const lastHandTime = useRef([0, 0]);
+
+      // Mouse/Touch Drag Fallback
+      const isMouseDown = useRef(false);
+      const mouseTrail = useRef([]);
+
+      const [uiState, setUiState] = useState({
+        phase: 'idle',
+        mode: 'classic',
+        score: 0,
+        lives: 3,
+        combo: 0,
         stats: { ...stats.current },
+        timeLeft: 60,
       });
 
-      /* ── MediaPipe init ──────────────────────────────────── */
+      const syncUi = useCallback(() => {
+        setUiState({
+          phase: gamePhase.current,
+          mode: gameMode.current,
+          score: score.current,
+          lives: lives.current,
+          combo: combo.current,
+          stats: { ...stats.current },
+          timeLeft: gameMode.current === 'zen' ? Math.ceil(zenTimer.current) : Math.ceil(arcadeTimer.current),
+        });
+      }, []);
+
+      // Persistence helper
+      const persistProfile = (c = coins, lvl = userLevel, xp = userXp, b = activeBlade, d = dojoBg, unl = unlockedItems) => {
+        localStorage.setItem('fn_coins', c.toString());
+        localStorage.setItem('fn_level', lvl.toString());
+        localStorage.setItem('fn_xp', xp.toString());
+        localStorage.setItem('fn_blade', b);
+        localStorage.setItem('fn_dojo', d);
+        localStorage.setItem('fn_unlocked', JSON.stringify(unl));
+        localStorage.setItem('fn_nickname', nickname);
+      };
+
+      const handleBuyShopItem = item => {
+        if (unlockedItems.includes(item.id)) return;
+        if (coins < item.price) {
+          alert(`Need ${item.price} Dojo Coins (you have ${coins})`);
+          return;
+        }
+        const newCoins = coins - item.price;
+        const newUnlocked = [...unlockedItems, item.id];
+        setCoins(newCoins);
+        setUnlockedItems(newUnlocked);
+        if (item.type === 'blade') setActiveBlade(item.id);
+        if (item.type === 'dojo') setDojoBg(item.id);
+        persistProfile(newCoins, userLevel, userXp, item.type === 'blade' ? item.id : activeBlade, item.type === 'dojo' ? item.id : dojoBg, newUnlocked);
+        sound.playChime();
+      };
+
+      const handleEquipShopItem = (itemId, itemType) => {
+        if (itemType === 'blade') {
+          setActiveBlade(itemId);
+          persistProfile(coins, userLevel, userXp, itemId, dojoBg, unlockedItems);
+        } else {
+          setDojoBg(itemId);
+          persistProfile(coins, userLevel, userXp, activeBlade, itemId, unlockedItems);
+        }
+        sound.playClick();
+      };
+
+      const handleClaimQuest = questId => {
+        const updated = quests.map(q => {
+          if (q.id === questId && q.completed && !q.claimed) {
+            const newCoins = coins + q.rewardCoins;
+            setCoins(newCoins);
+            persistProfile(newCoins, userLevel, userXp, activeBlade, dojoBg, unlockedItems);
+            sound.playPowerup('double');
+            return { ...q, claimed: true };
+          }
+          return q;
+        });
+        setQuests(updated);
+        localStorage.setItem('fn_quests', JSON.stringify(updated));
+      };
+
+      /* ─── MediaPipe Hands Camera Initializer ──────────────────────── */
       useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
         let camera = null, hands = null;
 
-        const init = async () => {
+        const initVision = async () => {
           try {
             hands = new window.Hands({
               locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`,
             });
             hands.setOptions({
-              maxNumHands: 2, modelComplexity: 1,
-              minDetectionConfidence: 0.5, minTrackingConfidence: 0.5,
+              maxNumHands: 2,
+              modelComplexity: 1,
+              minDetectionConfidence: 0.55,
+              minTrackingConfidence: 0.55,
             });
 
             hands.onResults(results => {
-              setIsReady(true);
+              const detected = results.multiHandLandmarks || [];
+              handLandmarksRef.current = detected;
+
               const vw = video.videoWidth || 640;
               const vh = video.videoHeight || 480;
               const wRatio = window.innerWidth / window.innerHeight;
               const vRatio = vw / vh;
               let dW = window.innerWidth, dH = window.innerHeight, oX = 0, oY = 0;
               if (wRatio > vRatio) { dH = window.innerWidth / vRatio; oY = (window.innerHeight - dH) / 2; }
-              else                 { dW = window.innerHeight * vRatio; oX = (window.innerWidth - dW)  / 2; }
+              else { dW = window.innerHeight * vRatio; oX = (window.innerWidth - dW) / 2; }
 
-              const detected = results.multiHandLandmarks || [];
+              const now = Date.now();
               for (let h = 0; h < 2; h++) {
                 if (detected[h]) {
-                  const raw = detected[h][8]; // index fingertip
-                  const x = (1 - raw.x) * dW + oX;
-                  const y = raw.y * dH + oY;
-                  trail.current[h].push({ x, y });
-                  if (trail.current[h].length > 12) trail.current[h].shift();
-                  lastDetTimes.current[h] = Date.now();
+                  const tip = detected[h][8];
+                  const x = (1 - tip.x) * dW + oX;
+                  const y = tip.y * dH + oY;
+
+                  const prev = lastHandPoints.current[h];
+                  const smoothX = prev.x === 0 ? x : prev.x * 0.35 + x * 0.65;
+                  const smoothY = prev.y === 0 ? y : prev.y * 0.35 + y * 0.65;
+                  lastHandPoints.current[h] = { x: smoothX, y: smoothY };
+
+                  const dist = Math.hypot(smoothX - prev.x, smoothY - prev.y);
+                  if (dist > 35) sound.playSwoosh(Math.min(2.5, dist / 40));
+
+                  bladeTrails.current[h].push({ x: smoothX, y: smoothY, t: now });
+                  if (bladeTrails.current[h].length > 16) bladeTrails.current[h].shift();
+                  lastHandTime.current[h] = now;
                 } else {
-                  if (trail.current[h].length > 0) trail.current[h].shift();
+                  if (bladeTrails.current[h].length > 0) bladeTrails.current[h].shift();
                 }
               }
             });
 
             camera = new window.Camera(video, {
-              onFrame: async () => { if (video.readyState >= 2) await hands.send({ image: video }); },
-              width: 640, height: 480,
+              onFrame: async () => {
+                if (video.readyState >= 2) await hands.send({ image: video });
+              },
+              width: 640,
+              height: 480,
             });
+
             await camera.start();
-          } catch (err) {
-            console.error('Camera/MediaPipe error:', err);
-            setCamErr(true);
-          }
+          } catch (err) {}
         };
 
-        init();
-        return () => { if (camera) camera.stop(); if (hands) hands.close(); };
+        initVision();
+        return () => {
+          if (camera) camera.stop();
+          if (hands) hands.close();
+        };
       }, []);
 
-      /* ── Game loop ───────────────────────────────────────── */
+      /* ─── Pointer Drag Fallback ──────────────────────────────────── */
+      const handlePointerDown = e => {
+        sound.init(); sound.resume();
+        isMouseDown.current = true;
+        const rect = canvasRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left, y = e.clientY - rect.top;
+        mouseTrail.current = [{ x, y, t: Date.now() }];
+      };
+
+      const handlePointerMove = e => {
+        if (!isMouseDown.current) return;
+        const rect = canvasRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left, y = e.clientY - rect.top;
+        const now = Date.now();
+
+        if (mouseTrail.current.length > 0) {
+          const last = mouseTrail.current[mouseTrail.current.length - 1];
+          const dist = Math.hypot(x - last.x, y - last.y);
+          if (dist > 30) sound.playSwoosh(Math.min(2.0, dist / 35));
+        }
+
+        mouseTrail.current.push({ x, y, t: now });
+        if (mouseTrail.current.length > 16) mouseTrail.current.shift();
+      };
+
+      const handlePointerUp = () => {
+        isMouseDown.current = false;
+        mouseTrail.current = [];
+      };
+
+      /* ─── Spawning & Physics ─────────────────────────────────────── */
+      const spawnFruit = useCallback((isFrenzyWave = false) => {
+        const types = ['watermelon', 'orange', 'apple', 'banana', 'pineapple', 'strawberry', 'coconut'];
+        const r = Math.random();
+        let type = types[Math.floor(Math.random() * types.length)];
+
+        if (gamePhase.current === 'playing') {
+          if (gameMode.current !== 'zen' && r < 0.14) type = 'bomb';
+          else if (r < 0.18) type = 'star';
+          else if (gameMode.current === 'arcade' && r < 0.22) type = 'ice';
+          else if (gameMode.current === 'arcade' && r < 0.26) type = 'diamond';
+          else if (r < 0.30) type = 'dragonfruit';
+        }
+
+        const cfg = FRUITS_CONFIG[type];
+        const radius = cfg.radius;
+        const screenW = window.innerWidth || 800;
+        const screenH = window.innerHeight || 600;
+
+        let x, y, vx, vy, rotSpd;
+        const GRAVITY = 920;
+
+        if (isFrenzyWave) {
+          const fromLeft = Math.random() > 0.5;
+          x = fromLeft ? -radius - 10 : screenW + radius + 10;
+          y = screenH * 0.35 + Math.random() * (screenH * 0.3);
+          vx = (fromLeft ? 1 : -1) * (screenW * 0.45 + Math.random() * (screenW * 0.25));
+          vy = -(600 + Math.random() * 300);
+          rotSpd = (Math.random() - 0.5) * 4.0;
+        } else {
+          x = screenW * 0.15 + Math.random() * (screenW * 0.7);
+          y = screenH + radius + 15;
+          const peakY = screenH * (0.12 + Math.random() * 0.22);
+          const deltaH = Math.max(100, y - peakY);
+          vy = -Math.sqrt(2 * GRAVITY * deltaH);
+          const tApex = Math.abs(vy) / GRAVITY;
+          const targetX = screenW * 0.2 + Math.random() * (screenW * 0.6);
+          vx = (targetX - x) / (tApex * 1.5) + (Math.random() * 60 - 30);
+          rotSpd = (Math.random() - 0.5) * 3.5;
+        }
+
+        fruits.current.push({
+          id: Math.random(),
+          type,
+          x, y, vx, vy, radius,
+          rotation: Math.random() * Math.PI * 2,
+          rotSpd,
+          sliced: false,
+          sliceAngle: 0,
+          opacity: 1,
+          hasEntered: false,
+          spawnTime: Date.now(),
+          h1x: 0, h1y: 0, h2x: 0, h2y: 0,
+          h1vx: 0, h1vy: 0, h2vx: 0, h2vy: 0,
+          h1rot: 0, h2rot: 0,
+          h1rotSpd: 0, h2rotSpd: 0,
+        });
+      }, []);
+
+      const spawnParticles = (x, y, colors, count = 24, isExplosion = false) => {
+        const colList = Array.isArray(colors) ? colors : [colors || '#ffffff'];
+        for (let i = 0; i < count; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const spd = (isExplosion ? 250 : 140) + Math.random() * (isExplosion ? 650 : 380);
+          const col = colList[Math.floor(Math.random() * colList.length)];
+          particles.current.push({
+            x, y,
+            vx: Math.cos(ang) * spd,
+            vy: Math.sin(ang) * spd,
+            radius: 2 + Math.random() * (isExplosion ? 8 : 5),
+            color: col,
+            opacity: 1,
+            life: 0,
+            maxLife: 0.6 + Math.random() * 0.6,
+            isSpark: Math.random() > 0.5,
+          });
+        }
+      };
+
+      const spawnSlashMark = (x1, y1, x2, y2, color) => {
+        slashMarks.current.push({
+          x1, y1, x2, y2,
+          color: color || '#fff',
+          opacity: 1,
+          width: 4 + Math.random() * 4,
+          life: 20,
+        });
+      };
+
+      const triggerGameOver = () => {
+        gamePhase.current = 'gameover';
+        sound.playGong();
+
+        // Calculate Rewards
+        const finalScore = score.current;
+        const earnedCoins = Math.max(5, Math.floor(finalScore / 8) + (stats.current.maxCombo * 3));
+        const earnedXp = Math.floor(finalScore / 5);
+        const newCoins = coins + earnedCoins;
+        const newXp = userXp + earnedXp;
+        const newLvl = Math.floor(newXp / 300) + 1;
+
+        setCoins(newCoins);
+        setUserXp(newXp);
+        setUserLevel(newLvl);
+
+        // Update Quest Milestones
+        const updatedQ = quests.map(q => {
+          let cur = q.current;
+          if (q.id === 'q_slice_50') cur = Math.min(q.target, cur + stats.current.sliced);
+          if (q.id === 'q_combo_5' && stats.current.maxCombo >= 5) cur = stats.current.maxCombo;
+          if (q.id === 'q_play_zen' && gameMode.current === 'zen') cur = 1;
+          if (q.id === 'q_score_300' && finalScore >= 300) cur = finalScore;
+          if (q.id === 'q_crit_5') cur = Math.min(q.target, cur + stats.current.criticals);
+          return { ...q, current: cur, completed: cur >= q.target };
+        });
+        setQuests(updatedQ);
+        localStorage.setItem('fn_quests', JSON.stringify(updatedQ));
+
+        // Update Leaderboard
+        if (gameMode.current !== 'duel') {
+          const modeKey = gameMode.current;
+          const curLb = [...(leaderboards[modeKey] || [])];
+          curLb.push({
+            rank: 0,
+            username: nickname,
+            score: finalScore,
+            maxCombo: stats.current.maxCombo,
+            sliced: stats.current.sliced,
+          });
+          curLb.sort((a, b) => b.score - a.score);
+          const topList = curLb.slice(0, 10).map((row, idx) => ({ ...row, rank: idx + 1 }));
+          const newLb = { ...leaderboards, [modeKey]: topList };
+          setLeaderboards(newLb);
+          localStorage.setItem('fn_lb', JSON.stringify(newLb));
+        } else {
+          // 1v1 Result
+          const won = finalScore > duelState.opponentScore;
+          setDuelState(s => ({ ...s, winner: won ? nickname : s.opponentName }));
+        }
+
+        persistProfile(newCoins, newLvl, newXp, activeBlade, dojoBg, unlockedItems);
+        syncUi();
+      };
+
+      /* ─── Main Render Loop ────────────────────────────────────────── */
       useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // ── spawn helpers ──
-        const spawnFruit = (isIdle = false) => {
-          let type = 'watermelon';
-          const r = Math.random();
-          if (isIdle) {
-            const basic = ['watermelon','orange','apple','banana','lemon','pineapple','mango','strawberry','peach','grapes','kiwi','cherry','blueberry'];
-            type = basic[Math.floor(Math.random() * basic.length)];
-          } else {
-            if (gameMode.current !== 'zen' && r < 0.125) type = 'bomb';
-            else if (r < 0.155) type = 'star';
-            else if (r < 0.175) type = 'ice';
-            else if (r < 0.195) type = 'diamond';
-            else if (r < 0.225) type = 'cherry';
-            else {
-              const basic = ['watermelon','orange','apple','banana','lemon','pineapple','mango','strawberry','peach','grapes','kiwi','blueberry'];
-              type = basic[Math.floor(Math.random() * basic.length)];
-            }
-          }
-          let radius = 40 + Math.random() * 20;
-          let vyBase = isIdle ? -15 : -20;
-          if (score.current > 50 && !isIdle) vyBase = -24;
-          let spd = 1;
-          if (type === 'strawberry' || type === 'blueberry') { radius = 30; spd = 1.2; }
-          else if (type === 'cherry')  { radius = 28; spd = 1.5; }
-          else if (type === 'pineapple') radius = 50 + Math.random() * 20;
-          else if (type === 'star' || type === 'ice' || type === 'diamond') radius = 45;
-          else if (type === 'bomb') radius = 50;
+        const loop = now => {
+          const dt = Math.min(0.1, (now - lastFrameT.current) / 1000);
+          lastFrameT.current = now;
 
-          const x = window.innerWidth * 0.2 + Math.random() * (window.innerWidth * 0.6);
-          const y = window.innerHeight + radius + 10;
-          const vx = (((window.innerWidth/2) - x) * 0.005 + (Math.random()*4-2)) * spd;
-          const vy = (vyBase + (Math.random()*4-2)) * spd;
-          const rotSpd = type==='star' ? 0.3+Math.random()*0.2 : (Math.random()-0.5)*0.2;
-          fruits.current.push({
-            id: Math.random(), x, y, vx, vy, radius,
-            rotation: Math.random()*Math.PI*2, rotSpd, type,
-            sliced: false, opacity: 1, spawnTime: Date.now(),
-          });
-        };
-
-        const spawnParticles = (x, y, type) => {
-          let count = 12 + Math.random() * 6;
-          if (type === 'star') count = 40;
-          const cols = colors[type] || ['#fff'];
-          for (let i = 0; i < count; i++) {
-            const ang = Math.random() * Math.PI * 2;
-            const spd = (type==='star' ? 4 : 2) + Math.random() * 8;
-            particles.current.push({
-              x, y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd,
-              radius: 2+Math.random()*6, color: cols[Math.floor(Math.random()*cols.length)],
-              opacity: 1, maxLife: 30+Math.random()*20,
-            });
-          }
-        };
-
-        const spawnExplosion = (x, y) => {
-          for (let i = 0; i < 40; i++) {
-            const ang = Math.random()*Math.PI*2, spd = 5+Math.random()*15;
-            particles.current.push({
-              x, y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd,
-              radius: 4+Math.random()*10, color: colors.bomb[Math.floor(Math.random()*colors.bomb.length)],
-              opacity: 1, maxLife: 40+Math.random()*20,
-            });
-          }
-        };
-
-        const endGame = () => { gamePhase.current = 'gameover'; syncUi(); };
-
-        // ── main loop ──
-        const loop = () => {
-          // resize
           if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
           }
+
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          // arcade timeout
-          if (gamePhase.current === 'playing' && gameMode.current === 'arcade') {
-            if (Date.now() - arcadeStart.current >= 60000) endGame();
+          if (isPaused) {
+            reqRef.current = requestAnimationFrame(loop);
+            return;
           }
 
           ctx.save();
-          if (shakeT.current > 0) { ctx.translate(Math.random()*10-5, Math.random()*10-5); shakeT.current--; }
-
-          // ── fever vignette ──
-          if (fever.current && gamePhase.current === 'playing') {
-            feverT.current--;
-            if (feverT.current <= 0) fever.current = false;
-            const pulse = Math.abs(Math.sin(Date.now()/150))*0.3 + 0.1;
-            const vg = ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.height/3, canvas.width/2, canvas.height/2, canvas.width);
-            vg.addColorStop(0, 'rgba(255,150,0,0)');
-            vg.addColorStop(1, `rgba(255,100,0,${pulse})`);
-            ctx.fillStyle = vg; ctx.fillRect(0,0,canvas.width,canvas.height);
-            ctx.font = 'bold 50px "Press Start 2P"';
-            ctx.fillStyle = `rgba(255,200,0,${Math.abs(Math.sin(Date.now()/100))*0.5+0.5})`;
-            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            ctx.fillText('FEVER!', canvas.width/2, 20);
+          if (shakeTimer.current > 0) {
+            const mag = shakeTimer.current * 1.5;
+            ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
+            shakeTimer.current -= dt * 30;
           }
 
-          // ── juice stains ──
-          for (const s of stains.current) {
-            ctx.globalAlpha = Math.max(0, s.opacity);
-            ctx.fillStyle = s.color;
-            ctx.beginPath(); ctx.arc(s.x, s.y, s.radius, 0, Math.PI*2); ctx.fill();
-            ctx.globalAlpha = 1; s.opacity -= 0.003;
-          }
-          stains.current = stains.current.filter(s => s.opacity > 0);
+          // Timers
+          if (gamePhase.current === 'playing') {
+            if (gameMode.current === 'arcade' || gameMode.current === 'duel') {
+              arcadeTimer.current -= dt;
 
-          // ── bomb screen flash ──
-          if (bombFlashT.current > 0) {
-            ctx.fillStyle = `rgba(255,0,0,${bombFlashT.current/30})`;
-            ctx.fillRect(0,0,canvas.width,canvas.height); bombFlashT.current--;
-          }
+              // AI Rival Slicing Engine in 1v1 Duel
+              if (gameMode.current === 'duel' && Math.random() < 0.04) {
+                const addPts = Math.random() > 0.3 ? 1 : 2;
+                setDuelState(s => ({
+                  ...s,
+                  opponentScore: s.opponentScore + addPts,
+                  opponentCombo: Math.random() > 0.85 ? Math.floor(3 + Math.random() * 4) : s.opponentCombo
+                }));
+              }
 
-          // ── spawning ──
-          if (gamePhase.current === 'idle') {
-            if (Date.now() - lastSpawnT.current > 1500) { lastSpawnT.current = Date.now(); spawnFruit(true); }
-          } else if (gamePhase.current === 'playing') {
-            let base = 2000;
-            if (score.current > 50) base = 1200;
-            else if (score.current > 25) base = 1400;
-            else if (score.current > 10) base = 1700;
-            spawnInterval.current = fever.current ? base*0.6 : base;
-            if (Date.now() - lastSpawnT.current > spawnInterval.current) {
-              lastSpawnT.current = Date.now();
-              let count = 1;
-              if (score.current > 50) count = Math.random()<0.5 ? 3 : 2;
-              else if (score.current > 25) count = Math.floor(Math.random()*3)+1;
-              else if (score.current > 10) count = Math.floor(Math.random()*2)+1;
-              for (let i = 0; i < count; i++) spawnFruit(false);
+              if (arcadeTimer.current <= 0) {
+                arcadeTimer.current = 0;
+                triggerGameOver();
+              }
+            } else if (gameMode.current === 'zen') {
+              zenTimer.current -= dt;
+              if (zenTimer.current <= 0) {
+                zenTimer.current = 0;
+                triggerGameOver();
+              }
+            }
+
+            if (freezeActive.current) {
+              freezeTimer.current -= dt;
+              if (freezeTimer.current <= 0) freezeActive.current = false;
+            }
+            if (frenzyActive.current) {
+              frenzyTimer.current -= dt;
+              if (frenzyTimer.current <= 0) frenzyActive.current = false;
+            }
+            if (doubleActive.current) {
+              doubleTimer.current -= dt;
+              if (doubleTimer.current <= 0) doubleActive.current = false;
             }
           }
 
-          // ── slicing (both hands) ──
-          if (gamePhase.current === 'playing' && !freezeActive.current) {
-            trail.current.forEach(handTrail => {
-              const tLen = handTrail.length;
-              if (tLen < 2) return;
-              const p1 = handTrail[tLen-2], p2 = handTrail[tLen-1];
+          // Stains & Marks
+          for (let i = stains.current.length - 1; i >= 0; i--) {
+            const s = stains.current[i];
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, s.opacity);
+            ctx.fillStyle = s.color;
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2); ctx.fill();
+            if (s.drips) {
+              s.drips.forEach(d => {
+                ctx.beginPath(); ctx.arc(s.x + d.dx, s.y + d.dy, d.r, 0, Math.PI * 2); ctx.fill();
+                d.dy += dt * 25;
+              });
+            }
+            ctx.restore();
+            s.opacity -= dt * 0.08;
+            if (s.opacity <= 0) stains.current.splice(i, 1);
+          }
+
+          for (let i = slashMarks.current.length - 1; i >= 0; i--) {
+            const sm = slashMarks.current[i];
+            ctx.save();
+            ctx.globalAlpha = sm.opacity; ctx.strokeStyle = sm.color; ctx.lineWidth = sm.width;
+            ctx.shadowColor = sm.color; ctx.shadowBlur = 12;
+            ctx.beginPath(); ctx.moveTo(sm.x1, sm.y1); ctx.lineTo(sm.x2, sm.y2); ctx.stroke();
+            ctx.restore();
+            sm.opacity -= dt * 2.5;
+            if (sm.opacity <= 0) slashMarks.current.splice(i, 1);
+          }
+
+          // Spawning
+          const timeSinceSpawn = now - lastSpawnT.current;
+          const timeScale = freezeActive.current ? 0.35 : 1.0;
+          const scaledDt = dt * timeScale;
+          const GRAVITY_ENGINE = 920;
+
+          if (gamePhase.current === 'idle') {
+            if (timeSinceSpawn > 1600) { lastSpawnT.current = now; spawnFruit(false); }
+          } else if (gamePhase.current === 'playing') {
+            let baseInterval = 1600;
+            if (score.current > 60) baseInterval = 950;
+            else if (score.current > 30) baseInterval = 1200;
+            spawnInterval.current = frenzyActive.current ? 350 : baseInterval;
+
+            if (timeSinceSpawn > spawnInterval.current) {
+              lastSpawnT.current = now;
+              const count = frenzyActive.current ? 3 : (score.current > 40 && Math.random() > 0.4 ? 2 : 1);
+              for (let k = 0; k < count; k++) spawnFruit(frenzyActive.current);
+            }
+          }
+
+          // Slicing Collisions
+          const activeSlices = [];
+          if (isMouseDown.current && mouseTrail.current.length >= 2) activeSlices.push(mouseTrail.current);
+          bladeTrails.current.forEach(ht => { if (ht.length >= 2) activeSlices.push(ht); });
+
+          if (gamePhase.current === 'playing' || gamePhase.current === 'idle') {
+            activeSlices.forEach(trailPoints => {
+              const p1 = trailPoints[trailPoints.length - 2];
+              const p2 = trailPoints[trailPoints.length - 1];
+
               fruits.current.forEach(f => {
-                if (!f.sliced && lineCircleIntersection(p1.x,p1.y,p2.x,p2.y,f.x,f.y,f.radius*1.2)) {
-                  if (f.type === 'bomb') {
-                    stats.current.bombsHit++; bombsSliced.current++;
-                    spawnExplosion(f.x, f.y); bombFlashT.current = 30; shakeT.current = 20;
-                    if (bombsSliced.current >= 5) { endGame(); }
-                    else if (gameMode.current === 'zen')    { score.current = Math.max(0, score.current-5); }
-                    else if (gameMode.current === 'arcade') { score.current = Math.max(0, score.current-5); }
-                    else { lives.current--; if (lives.current <= 0) endGame(); }
-                    syncUi();
+                if (!f.sliced && lineCircleIntersection(p1.x, p1.y, p2.x, p2.y, f.x, f.y, f.radius * 1.15)) {
+                  f.sliced = true;
+                  const cutAngle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+                  f.sliceAngle = cutAngle;
+
+                  const nx = -Math.sin(cutAngle), ny = Math.cos(cutAngle);
+                  const sepSpd = 260 + Math.random() * 140;
+                  f.h1vx = f.vx * 0.4 + nx * sepSpd;
+                  f.h1vy = f.vy * 0.4 + ny * sepSpd - 200;
+                  f.h2vx = f.vx * 0.4 - nx * sepSpd;
+                  f.h2vy = f.vy * 0.4 - ny * sepSpd - 200;
+                  f.h1rotSpd = (Math.random() - 0.5) * 6;
+                  f.h2rotSpd = (Math.random() - 0.5) * 6;
+
+                  const cfg = FRUITS_CONFIG[f.type] || FRUITS_CONFIG.watermelon;
+
+                  if (cfg.isBomb) {
+                    stats.current.bombsHit++;
+                    sound.playExplosion();
+                    spawnParticles(f.x, f.y, ['#f97316', '#fef08a', '#ef4444', '#64748b', '#020617'], 50, true);
+                    shakeTimer.current = 18;
+
+                    if (gamePhase.current === 'playing') {
+                      if (gameMode.current === 'classic') {
+                        triggerGameOver();
+                      } else {
+                        score.current = Math.max(0, score.current - 10);
+                        combo.current = 0;
+                        floatTexts.current.push({ x: f.x, y: f.y, text: '-10 BOMB!', color: '#ef4444', scale: 1.4, life: 1.2 });
+                        syncUi();
+                      }
+                    }
                   } else {
                     stats.current.sliced++;
-                    let pts = 1;
-                    if (['pineapple','mango','grapes'].includes(f.type)) pts = 2;
-                    if (f.type === 'cherry')  pts = 3;
-                    if (f.type === 'star')    pts = 10;
-                    if (f.type === 'ice')     { pts = 5; freezeActive.current = true; freezeT.current = 180; }
-                    if (f.type === 'diamond') { pts = 5; doubleActive.current = true; doubleT.current = 600; }
+                    sound.playSlice(f.type);
+                    spawnParticles(f.x, f.y, [cfg.juice, cfg.rind, cfg.flesh, cfg.seeds, '#ffffff'], 30);
+                    spawnSlashMark(p1.x, p1.y, p2.x, p2.y, cfg.rind);
 
-                    const now = Date.now();
-                    if (now - lastSliceT.current > 1500) combo.current = 0;
-                    combo.current++; lastSliceT.current = now;
-                    if (combo.current > stats.current.maxCombo) stats.current.maxCombo = combo.current;
-                    if (combo.current >= 5) { fever.current = true; feverT.current = 120; }
-                    else if (fever.current) feverT.current = 120;
+                    stains.current.push({
+                      x: f.x, y: f.y, radius: 25 + Math.random() * 25, color: cfg.juice, opacity: 0.7,
+                      drips: [{ dx: (Math.random()-0.5)*20, dy: Math.random()*25, r: 4 }, { dx: (Math.random()-0.5)*20, dy: Math.random()*35, r: 3 }]
+                    });
+                    if (stains.current.length > 25) stains.current.shift();
 
-                    let multi = Math.max(1, combo.current-1);
-                    if (doubleActive.current) multi *= 2;
-                    if (fever.current) multi *= 3;
-                    const gained = pts * multi;
-                    score.current += gained;
-                    if (score.current > highScore.current) {
-                      highScore.current = score.current;
-                      localStorage.setItem('fruitNinjaHS', String(highScore.current));
+                    if (gamePhase.current === 'playing') {
+                      const curTime = Date.now();
+                      if (curTime - lastSliceT.current < 450) combo.current++;
+                      else combo.current = 1;
+                      lastSliceT.current = curTime;
+                      if (combo.current > stats.current.maxCombo) stats.current.maxCombo = combo.current;
+
+                      let pts = cfg.pts;
+                      let isCrit = Math.random() < 0.08;
+                      if (isCrit) {
+                        pts += 10; stats.current.criticals++; sound.playChime();
+                        floatTexts.current.push({ x: f.x, y: f.y - 40, text: 'CRITICAL! +10', color: '#fde047', scale: 1.6, life: 1.3 });
+                      }
+
+                      if (doubleActive.current) pts *= 2;
+                      if (combo.current >= 3) {
+                        sound.playCombo(combo.current);
+                        floatTexts.current.push({ x: f.x, y: f.y, text: `COMBO x${combo.current}!`, color: combo.current >= 5 ? '#f97316' : '#fde047', scale: 1.3 + combo.current * 0.1, life: 1.2 });
+                        pts += combo.current;
+                      } else if (pts > 0 && !isCrit) {
+                        floatTexts.current.push({ x: f.x, y: f.y, text: `+${pts}`, color: '#ffffff', scale: 1.1, life: 0.8 });
+                      }
+
+                      score.current += pts;
+
+                      if (f.type === 'ice') { freezeActive.current = true; freezeTimer.current = 4.5; sound.playPowerup('freeze'); }
+                      else if (f.type === 'diamond') { doubleActive.current = true; doubleTimer.current = 6.0; sound.playPowerup('double'); }
+                      else if (f.type === 'dragonfruit') { frenzyActive.current = true; frenzyTimer.current = 4.0; sound.playPowerup('frenzy'); }
+
+                      syncUi();
                     }
-                    syncUi();
-
-                    const stainCol = (colors[f.type] || ['#fff'])[0];
-                    stains.current.push({ x:f.x, y:f.y, radius:20+Math.random()*30, color:stainCol, opacity:0.6 });
-                    if (stains.current.length > 20) stains.current.shift();
-                    flashes.current.push({ x:f.x, y:f.y, radius:0, maxRadius:f.radius*2, life:10 });
-
-                    if (f.type === 'cherry')
-                      floatTexts.current.push({ x:f.x, y:f.y-30, text:'LUCKY!', life:60, maxLife:60, color:'#FFD700' });
-                    if (combo.current >= 3)
-                      floatTexts.current.push({ x:f.x, y:f.y, text:`COMBO x${combo.current}!`, life:60, maxLife:60, color: fever.current ? '#ff6600' : '#ffcc00' });
-                    else if (gained > 1)
-                      floatTexts.current.push({ x:f.x, y:f.y, text:`+${gained}`, life:40, maxLife:40, color:'#fff' });
-
-                    spawnParticles(f.x, f.y, f.type);
                   }
-                  f.sliced = true;
-                  f.sliceAngle = Math.atan2(p2.y-p1.y, p2.x-p1.x);
-                  f.h1x=0; f.h1y=0; f.h2x=0; f.h2y=0;
-                  f.h1vx=-4; f.h1vy=-8; f.h2vx=4; f.h2vy=8;
                 }
               });
             });
           }
 
-          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-
-          // ── draw fruits ──
-          for (let i = fruits.current.length-1; i >= 0; i--) {
+          // Update & Render Fruits
+          for (let i = fruits.current.length - 1; i >= 0; i--) {
             const f = fruits.current[i];
-            const emoji = emojis[f.type];
-            const size  = f.radius * 2.2;
-            ctx.font = `${size}px sans-serif`;
-
             if (!f.sliced) {
-              ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rotation);
-              const gCol = fruitGlow[f.type];
-              if (gCol) {
-                const gr = ctx.createRadialGradient(0,0,0,0,0,f.radius*1.5);
-                gr.addColorStop(0, gCol+'60'); gr.addColorStop(1, gCol+'00');
-                ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0,0,f.radius*1.5,0,Math.PI*2); ctx.fill();
-              }
-              ctx.shadowBlur = 20; ctx.shadowColor = gCol || 'transparent';
-              ctx.fillText(emoji, 0, 0); ctx.shadowBlur = 0; ctx.restore();
+              f.x += f.vx * scaledDt; f.y += f.vy * scaledDt; f.vy += GRAVITY_ENGINE * scaledDt; f.rotation += f.rotSpd * scaledDt;
+              if (f.y < canvas.height) f.hasEntered = true;
 
-              if (gamePhase.current !== 'gameover') {
-                if (!freezeActive.current) { f.x+=f.vx; f.y+=f.vy; f.vy+=0.4; f.rotation+=f.rotSpd; }
-                if (f.y > canvas.height + f.radius*2) {
-                  if (gamePhase.current==='playing' && !['bomb','star','ice','diamond'].includes(f.type)) {
-                    stats.current.missed++;
-                    if (gameMode.current==='classic') {
-                      lives.current--; shakeT.current = 8;
-                      if (lives.current <= 0) endGame(); else syncUi();
-                    }
+              ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rotation); drawFruitWhole(ctx, f); ctx.restore();
+
+              if (f.hasEntered && f.y > canvas.height + f.radius * 2 && f.vy > 0) {
+                if (gamePhase.current === 'playing' && !FRUITS_CONFIG[f.type].isBomb && !FRUITS_CONFIG[f.type].special) {
+                  stats.current.missed++;
+                  if (gameMode.current === 'classic') {
+                    lives.current--; shakeTimer.current = 6;
+                    if (lives.current <= 0) triggerGameOver(); else syncUi();
                   }
-                  fruits.current.splice(i, 1);
                 }
+                fruits.current.splice(i, 1);
               }
             } else {
-              ctx.globalAlpha = f.opacity; ctx.save(); ctx.translate(f.x,f.y); ctx.rotate(f.sliceAngle||0);
-              ctx.save(); ctx.beginPath(); ctx.rect(-size*2,-size*2,size*4,size*2); ctx.clip();
-              ctx.translate(f.h1x||0,f.h1y||0); ctx.rotate(f.rotation-(f.sliceAngle||0)); ctx.fillText(emoji,0,0); ctx.restore();
-              ctx.save(); ctx.beginPath(); ctx.rect(-size*2,0,size*4,size*2); ctx.clip();
-              ctx.translate(f.h2x||0,f.h2y||0); ctx.rotate(f.rotation-(f.sliceAngle||0)); ctx.fillText(emoji,0,0); ctx.restore();
-              ctx.restore(); ctx.globalAlpha = 1;
+              f.h1x += f.h1vx * scaledDt; f.h1y += f.h1vy * scaledDt; f.h1vy += GRAVITY_ENGINE * scaledDt; f.h1rot = (f.h1rot || 0) + (f.h1rotSpd || 2) * scaledDt;
+              f.h2x += f.h2vx * scaledDt; f.h2y += f.h2vy * scaledDt; f.h2vy += GRAVITY_ENGINE * scaledDt; f.h2rot = (f.h2rot || 0) + (f.h2rotSpd || -2) * scaledDt;
+              f.opacity -= dt * 1.5;
 
-              if (gamePhase.current === 'playing') {
-                if (!freezeActive.current) {
-                  f.x+=f.vx; f.y+=f.vy; f.vy+=0.4; f.rotation+=f.rotSpd;
-                  f.h1x=(f.h1x||0)+(f.h1vx||0); f.h1y=(f.h1y||0)+(f.h1vy||0);
-                  f.h2x=(f.h2x||0)+(f.h2vx||0); f.h2y=(f.h2y||0)+(f.h2vy||0);
-                }
-                f.opacity -= 0.02; if (f.opacity <= 0) fruits.current.splice(i,1);
-              }
+              ctx.save(); ctx.globalAlpha = Math.max(0, f.opacity);
+              ctx.save(); ctx.translate(f.x + f.h1x, f.y + f.h1y); ctx.rotate(f.sliceAngle + f.h1rot); drawFruitHalf(ctx, f, 0); ctx.restore();
+              ctx.save(); ctx.translate(f.x + f.h2x, f.y + f.h2y); ctx.rotate(f.sliceAngle + f.h2rot); drawFruitHalf(ctx, f, 1); ctx.restore();
+              ctx.restore();
+
+              if (f.opacity <= 0 || (f.y + Math.min(f.h1y, f.h2y) > canvas.height + 250)) fruits.current.splice(i, 1);
             }
           }
 
-          // ── slice flashes ──
-          for (let i = flashes.current.length-1; i >= 0; i--) {
-            const f = flashes.current[i];
-            ctx.beginPath(); ctx.arc(f.x,f.y,f.radius,0,Math.PI*2);
-            ctx.fillStyle = `rgba(255,255,255,${f.life/10})`; ctx.fill();
-            f.radius += (f.maxRadius-f.radius)*0.2; f.life--;
-            if (f.life <= 0) flashes.current.splice(i,1);
-          }
-
-          // ── particles ──
-          for (let i = particles.current.length-1; i >= 0; i--) {
+          // Particles
+          for (let i = particles.current.length - 1; i >= 0; i--) {
             const p = particles.current[i];
-            ctx.globalAlpha = p.opacity; ctx.fillStyle = p.color;
-            ctx.beginPath(); ctx.arc(p.x,p.y,p.radius,0,Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
-            if (gamePhase.current==='playing' && !freezeActive.current) {
-              p.x+=p.vx; p.y+=p.vy; p.vy+=0.3; p.opacity-=1/p.maxLife;
-              if (p.opacity <= 0) particles.current.splice(i,1);
-            }
+            p.x += p.vx * scaledDt; p.y += p.vy * scaledDt; p.vy += 650 * scaledDt; p.life += dt;
+            p.opacity = Math.max(0, 1 - p.life / p.maxLife);
+
+            ctx.save(); ctx.globalAlpha = p.opacity; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            if (p.opacity <= 0) particles.current.splice(i, 1);
           }
 
-          // ── freeze overlay ──
-          if (freezeActive.current) {
-            freezeT.current--;
-            if (freezeT.current <= 0) freezeActive.current = false;
-            ctx.fillStyle = 'rgba(100,180,255,0.15)'; ctx.fillRect(0,0,canvas.width,canvas.height);
-          }
+          // Blade Trails
+          const bladeCfg = BLADES[activeBlade] || BLADES.classic;
+          const allActiveTrails = [...bladeTrails.current];
+          if (isMouseDown.current && mouseTrail.current.length > 0) allActiveTrails.push(mouseTrail.current);
 
-          // ── blade trail (both hands) ──
-          trail.current.forEach(ht => {
-            if (ht.length < 2) return;
-            // sparkle dots
-            for (let i = 1; i < ht.length; i++) {
-              if (i % 2 === 0) {
-                const p = ht[i];
-                ctx.beginPath(); ctx.arc(p.x,p.y,4+Math.random()*4,0,Math.PI*2);
-                ctx.fillStyle='#fff'; ctx.shadowBlur=15; ctx.shadowColor='#FFD700'; ctx.fill();
-              }
+          allActiveTrails.forEach(trail => {
+            if (trail.length < 2) return;
+            ctx.save();
+            const glowColor = bladeCfg.outerGlow === 'rainbow' ? `hsl(${(now * 0.3) % 360}, 100%, 55%)` : bladeCfg.outerGlow;
+            ctx.shadowColor = glowColor; ctx.shadowBlur = 24;
+
+            for (let i = 1; i < trail.length; i++) {
+              const pA = trail[i - 1], pB = trail[i];
+              const progress = i / trail.length;
+              ctx.beginPath(); ctx.moveTo(pA.x, pA.y); ctx.lineTo(pB.x, pB.y);
+              ctx.strokeStyle = glowColor; ctx.lineWidth = progress * 16; ctx.lineCap = 'round'; ctx.globalAlpha = progress * 0.85; ctx.stroke();
             }
-            // outer gold stroke
-            ctx.shadowBlur=20; ctx.shadowColor='#FF9900';
-            for (let i = 1; i < ht.length; i++) {
-              const f = i/ht.length;
-              ctx.beginPath(); ctx.moveTo(ht[i-1].x,ht[i-1].y); ctx.lineTo(ht[i].x,ht[i].y);
-              ctx.lineWidth=15*f; ctx.strokeStyle=`rgba(255,200,0,${f*0.8})`; ctx.lineCap='round'; ctx.stroke();
+
+            for (let i = 1; i < trail.length; i++) {
+              const pA = trail[i - 1], pB = trail[i];
+              const progress = i / trail.length;
+              ctx.beginPath(); ctx.moveTo(pA.x, pA.y); ctx.lineTo(pB.x, pB.y);
+              ctx.strokeStyle = bladeCfg.innerColor; ctx.lineWidth = progress * 6; ctx.lineCap = 'round'; ctx.globalAlpha = progress; ctx.stroke();
             }
-            // inner white stroke
-            for (let i = 1; i < ht.length; i++) {
-              const f = i/ht.length;
-              ctx.beginPath(); ctx.moveTo(ht[i-1].x,ht[i-1].y); ctx.lineTo(ht[i].x,ht[i].y);
-              ctx.lineWidth=6*f; ctx.strokeStyle=`rgba(255,255,255,${f})`; ctx.lineCap='round'; ctx.stroke();
-            }
-            ctx.shadowBlur=0;
+            ctx.restore();
           });
 
-          // ── floating texts ──
-          ctx.font = 'bold 40px "Boogaloo", sans-serif';
-          for (let i = floatTexts.current.length-1; i >= 0; i--) {
-            const t = floatTexts.current[i];
-            ctx.globalAlpha = t.life/t.maxLife; ctx.fillStyle = t.color;
-            ctx.strokeStyle='#000'; ctx.lineWidth=4;
-            ctx.strokeText(t.text,t.x,t.y); ctx.fillText(t.text,t.x,t.y); ctx.globalAlpha=1;
-            if (gamePhase.current==='playing') { t.y-=2; t.life--; if(t.life<=0) floatTexts.current.splice(i,1); }
+          // Hand Skeleton & Katana Tip Visualizer
+          if (showSkeleton && handLandmarksRef.current && handLandmarksRef.current.length > 0) {
+            const connections = [
+              [0,1],[1,2],[2,3],[3,4],
+              [0,5],[5,6],[6,7],[7,8],
+              [5,9],[9,10],[10,11],[11,12],
+              [9,13],[13,14],[14,15],[15,16],
+              [13,17],[17,18],[18,19],[19,20],
+              [0,17]
+            ];
+
+            const vw = videoRef.current ? videoRef.current.videoWidth || 640 : 640;
+            const vh = videoRef.current ? videoRef.current.videoHeight || 480 : 480;
+            const wRatio = canvas.width / canvas.height;
+            const vRatio = vw / vh;
+            let dW = canvas.width, dH = canvas.height, oX = 0, oY = 0;
+            if (wRatio > vRatio) { dH = canvas.width / vRatio; oY = (canvas.height - dH) / 2; }
+            else { dW = canvas.height * vRatio; oX = (canvas.width - dW) / 2; }
+
+            ctx.save();
+            handLandmarksRef.current.forEach((hand, hIdx) => {
+              ctx.strokeStyle = hIdx === 0 ? 'rgba(6, 182, 212, 0.45)' : 'rgba(245, 158, 11, 0.45)';
+              ctx.lineWidth = 3;
+              connections.forEach(([i, j]) => {
+                const p1 = hand[i], p2 = hand[j];
+                const x1 = (1 - p1.x) * dW + oX, y1 = p1.y * dH + oY;
+                const x2 = (1 - p2.x) * dW + oX, y2 = p2.y * dH + oY;
+                ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+              });
+
+              const tip = hand[8];
+              const tx = (1 - tip.x) * dW + oX, ty = tip.y * dH + oY;
+              ctx.fillStyle = '#ffffff';
+              ctx.shadowColor = hIdx === 0 ? '#06b6d4' : '#f59e0b';
+              ctx.shadowBlur = 20;
+              ctx.beginPath(); ctx.arc(tx, ty, 6, 0, Math.PI * 2); ctx.fill();
+            });
+            ctx.restore();
           }
 
-          // ── HUD canvas elements ──
-          if (gamePhase.current === 'playing') {
-            // combo bar
-            const mH = 8;
-            ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,canvas.height-mH,canvas.width,mH);
-            const cr = Math.min(1, combo.current/10);
-            if (cr > 0) {
-              const bg = ctx.createLinearGradient(0,0,canvas.width*cr,0);
-              bg.addColorStop(0,'#FF6600'); bg.addColorStop(1,'#FFCC00');
-              ctx.fillStyle = bg;
-              if (combo.current >= 10) { ctx.shadowBlur=10; ctx.shadowColor='#FFD700'; if(Math.floor(Date.now()/100)%2===0) ctx.fillStyle='#fff'; }
-              ctx.fillRect(0,canvas.height-mH,canvas.width*cr,mH); ctx.shadowBlur=0;
-            }
-            ctx.font='16px "Press Start 2P"'; ctx.fillStyle='#fff'; ctx.textAlign='left'; ctx.textBaseline='bottom';
-            ctx.shadowBlur=4; ctx.shadowColor='#000'; ctx.fillText('COMBO',10,canvas.height-mH-5); ctx.shadowBlur=0;
-
-            // double-points banner
-            let bY = 80;
-            if (doubleActive.current) {
-              doubleT.current--;
-              if (doubleT.current <= 0) doubleActive.current = false;
-              ctx.fillStyle='#FFD700'; ctx.font='24px "Press Start 2P"';
-              ctx.textAlign='center'; ctx.textBaseline='middle';
-              ctx.shadowBlur=10; ctx.shadowColor='#FFD700';
-              ctx.fillText('💎 2x POINTS', canvas.width/2, bY); ctx.shadowBlur=0;
-              const bW=200, fW=bW*(doubleT.current/600);
-              ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(canvas.width/2-bW/2,bY+20,bW,4);
-              ctx.fillStyle='#FFD700'; ctx.fillRect(canvas.width/2-bW/2,bY+20,fW,4);
-              bY += 60;
-            }
-            // freeze banner
-            if (freezeActive.current) {
-              ctx.fillStyle='#99CCFF'; ctx.font='24px "Press Start 2P"';
-              ctx.textAlign='center'; ctx.textBaseline='middle';
-              ctx.shadowBlur=10; ctx.shadowColor='#99CCFF';
-              ctx.fillText('🧊 TIME FREEZE',canvas.width/2,bY); ctx.shadowBlur=0;
-            }
-            // arcade timer
-            if (gameMode.current === 'arcade') {
-              const left = Math.max(0, 60000-(Date.now()-arcadeStart.current));
-              const secs = Math.ceil(left/1000);
-              const m = Math.floor(secs/60), s = secs%60;
-              const tStr = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-              ctx.textAlign='center'; ctx.textBaseline='top'; ctx.font='bold 40px "Press Start 2P"';
-              ctx.fillStyle = secs<=10 ? `rgba(255,0,0,${Math.abs(Math.sin(Date.now()/150))*0.5+0.5})` : '#fff';
-              ctx.shadowBlur=10; ctx.shadowColor='#000'; ctx.fillText(tStr,canvas.width/2,20); ctx.shadowBlur=0;
-            }
+          // Floating Texts
+          for (let i = floatTexts.current.length - 1; i >= 0; i--) {
+            const ft = floatTexts.current[i];
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, ft.life);
+            ctx.font = `bold ${Math.round(36 * (ft.scale || 1))}px 'Boogaloo', cursive`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = ft.color; ctx.strokeStyle = '#000000'; ctx.lineWidth = 6;
+            ctx.strokeText(ft.text, ft.x, ft.y); ctx.fillText(ft.text, ft.x, ft.y);
+            ctx.restore();
+            ft.y -= dt * 45; ft.life -= dt * 1.4;
+            if (ft.life <= 0) floatTexts.current.splice(i, 1);
           }
 
-          ctx.restore(); // end shake save
-
-          // trail fade when hand not detected
-          for (let h = 0; h < 2; h++) {
-            if (Date.now()-lastDetTimes.current[h] > 100 && trail.current[h].length > 0)
-              trail.current[h].shift();
-          }
-
+          ctx.restore();
           reqRef.current = requestAnimationFrame(loop);
         };
 
         reqRef.current = requestAnimationFrame(loop);
         return () => cancelAnimationFrame(reqRef.current);
-      }, []);
+      }, [activeBlade, isPaused, showSkeleton, spawnFruit]);
 
-      /* ── start game ──────────────────────────────────────── */
+      /* ─── Start Game Handler ──────────────────────────────────────── */
       const startGame = mode => {
+        sound.init(); sound.resume(); sound.playClick(); sound.startMusic();
         gameMode.current = mode; gamePhase.current = 'playing';
         score.current = 0; lives.current = 3; combo.current = 0;
-        fruits.current=[]; particles.current=[]; floatTexts.current=[];
-        stains.current=[]; flashes.current=[]; trail.current=[[],[]];
-        lastSpawnT.current = Date.now();
-        fever.current=false; feverT.current=0;
-        freezeActive.current=false; freezeT.current=0;
-        doubleActive.current=false; doubleT.current=0; shakeT.current=0;
-        stats.current = { sliced:0, missed:0, maxCombo:0, bombsHit:0 };
-        bombsSliced.current = 0;
-        if (mode==='arcade') arcadeStart.current = Date.now();
+        arcadeTimer.current = 60; zenTimer.current = 90;
+        fruits.current = []; particles.current = []; floatTexts.current = [];
+        stains.current = []; slashMarks.current = [];
+        stats.current = { sliced: 0, missed: 0, maxCombo: 0, bombsHit: 0, criticals: 0 };
+        setIsPaused(false);
+
+        if (mode === 'duel') {
+          setDuelState({
+            inDuel: true,
+            opponentName: 'Shadow Ronin (AI Rival)',
+            opponentScore: 0,
+            opponentCombo: 0,
+            winner: null,
+          });
+        }
         syncUi();
       };
 
-      /* ── render ──────────────────────────────────────────── */
-      const S = {  // shorthand style helper
-        abs: pos => ({ position:'absolute', ...pos }),
-        row: extra => ({ display:'flex', ...extra }),
-        col: extra => ({ display:'flex', flexDirection:'column', ...extra }),
-      };
+      const bgClass = dojoBg === 'bamboo' ? 'bamboo-bg' : dojoBg === 'night' ? 'night-bg' : 'wood-bg';
 
       return (
-        <div style={{position:'relative',width:'100vw',height:'100vh',overflow:'hidden',background:'#111',userSelect:'none',fontFamily:'Boogaloo, sans-serif'}}>
+        <div 
+          className={`w-full h-full relative overflow-hidden ${bgClass}`}
+          style={{ width: '100vw', height: '100vh', position: 'relative' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        >
+          {/* Webcam AR Layer */}
+          <video
+            ref={videoRef} playsInline muted autoPlay
+            style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+              transform: 'scaleX(-1)', zIndex: 1, opacity: dojoBg === 'cam' ? 0.9 : camOpacity,
+              filter: 'contrast(1.1) saturate(1.2)', pointerEvents: 'none'
+            }}
+          />
 
-          {/* Webcam */}
-          <video ref={videoRef} playsInline muted autoPlay
-            style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)',zIndex:0,opacity:0.6}} />
+          {/* Game Canvas */}
+          <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 10, touchAction: 'none' }} />
 
-          {/* Canvas (game rendering) */}
-          <canvas ref={canvasRef}
-            style={{position:'absolute',inset:0,width:'100%',height:'100%',zIndex:10,pointerEvents:'none'}} />
+          {/* ═════════════════════════════════════════════════════════
+             REACT UI OVERLAY
+             ═════════════════════════════════════════════════════════ */}
+          <div style={{ position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '18px 24px' }}>
+            
+            {/* TOP BAR / USER PROFILE & CONTROLS */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+              
+              {/* Left: User Profile & Lives */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', pointerEvents: 'auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  
+                  {/* User Profile Badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.6)', padding: '6px 14px', borderRadius: '9999px', border: '1px solid #f59e0b' }}>
+                    <span style={{ fontSize: '14px', background: '#f59e0b', color: '#000', fontWeight: 'bold', padding: '2px 8px', borderRadius: '9999px', fontFamily: '"Press Start 2P"' }}>
+                      LVL {userLevel}
+                    </span>
+                    <span style={{ fontSize: '18px', color: '#fde68a', fontWeight: 'bold' }}>
+                      {nickname}
+                    </span>
+                    <span style={{ color: '#fbbf24', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
+                      🪙 {coins}
+                    </span>
+                  </div>
 
-          {/* React UI layer */}
-          <div style={{position:'absolute',inset:0,zIndex:20,pointerEvents:'none',padding:'24px',display:'flex',flexDirection:'column',justifyContent:'space-between'}}>
-
-            {/* Top HUD */}
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-
-              {/* Left: lives + bomb counter */}
-              <div style={{display:'flex',alignItems:'flex-start',gap:'6px'}}>
-                {ui.mode==='classic' && Array.from({length:3}).map((_,i) => (
-                  <span key={i} style={{fontSize:'36px',opacity:i<ui.lives?1:0.3,filter:i<ui.lives?'':'grayscale(1)'}}>❤️</span>
-                ))}
-                {ui.phase==='playing' && (
-                  <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',marginTop:'4px',marginLeft:'4px'}}>
-                    <div style={{display:'flex',gap:'4px',fontSize:'24px'}}>
-                      {Array.from({length:5}).map((_,i) => (
-                        <span key={i} style={{opacity:i<ui.bombsSliced?1:0.2}}>💣</span>
+                  {uiState.mode === 'classic' && (
+                    <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.5)', padding: '6px 12px', borderRadius: '9999px', border: '1px solid rgba(255,255,255,0.2)' }}>
+                      {[0, 1, 2].map(i => (
+                        <span key={i} style={{ fontSize: '24px', opacity: i < uiState.lives ? 1 : 0.25, filter: i < uiState.lives ? 'drop-shadow(0 0 8px #ef4444)' : 'grayscale(1)' }}>
+                          ❤️
+                        </span>
                       ))}
                     </div>
-                    <div style={{fontSize:'8px',color:'#fb923c',marginTop:'2px',fontFamily:'"Press Start 2P"'}}>
-                      BOMBS ({ui.bombsSliced}/5)
+                  )}
+                </div>
+
+                {/* 1v1 Live Opponent Battle HUD */}
+                {gameMode.current === 'duel' && uiState.phase === 'playing' && (
+                  <div style={{ background: 'rgba(88, 28, 135, 0.75)', border: '2px solid #c084fc', padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '10px', fontFamily: '"Press Start 2P"', color: '#d8b4fe' }}>RIVAL: {duelState.opponentName}</div>
+                      <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff' }}>SCORE: {duelState.opponentScore}</div>
                     </div>
-                  </div>
-                )}
-                {ui.mode!=='classic' && (
-                  <div style={{fontSize:'40px',color:'white',WebkitTextStroke:'1px #000',textShadow:'0 2px 6px rgba(0,0,0,0.8)'}}>
-                    SCORE: {ui.score}
+                    {duelState.opponentCombo > 2 && (
+                      <div style={{ background: '#ec4899', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>
+                        {duelState.opponentCombo}x COMBO!
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* Centre: big score */}
-              <div style={{textAlign:'center',fontSize:'80px',fontWeight:'bold',color:'white',WebkitTextStroke:'2px #ff9900',lineHeight:1,textShadow:'0 4px 4px rgba(0,0,0,0.8)'}}>
-                {ui.mode==='classic' ? ui.score : ui.mode==='zen' ? 'ZEN' : ''}
+              {/* Center: Big Score & Timer */}
+              <div style={{ textAlign: 'center', pointerEvents: 'auto' }}>
+                <div style={{ fontSize: 'clamp(48px, 7vw, 80px)', fontWeight: 'bold', color: '#ffffff', textShadow: '0 4px 16px rgba(0,0,0,0.9), 0 0 20px rgba(245,158,11,0.5)', lineHeight: 1 }}>
+                  {uiState.score}
+                </div>
+                {uiState.phase === 'playing' && (uiState.mode === 'arcade' || uiState.mode === 'zen' || uiState.mode === 'duel') && (
+                  <div style={{ fontSize: '22px', color: uiState.timeLeft <= 10 ? '#ef4444' : '#fde68a', fontFamily: '"Press Start 2P"', marginTop: '4px' }}>
+                    ⏱️ {uiState.timeLeft}s
+                  </div>
+                )}
               </div>
 
-              {/* Right: high score */}
-              <div style={{textAlign:'right',fontSize:'26px',color:'white',fontFamily:'"Press Start 2P"',textShadow:'0 2px 4px rgba(0,0,0,0.8)'}}>
-                BEST: {ui.highScore}
+              {/* Right: Quick Action Modals */}
+              <div style={{ display: 'flex', gap: '8px', pointerEvents: 'auto' }}>
+                <button className="icon-btn" onClick={() => { sound.playClick(); setShowLeaderboard(true); }} title="Leaderboards">
+                  🏆
+                </button>
+                <button className="icon-btn" onClick={() => { sound.playClick(); setShowShop(true); }} title="Dojo Armory">
+                  🛒
+                </button>
+                <button className="icon-btn" onClick={() => { sound.playClick(); setShowQuests(true); }} title="Daily Quests">
+                  📜
+                </button>
+                <button className="icon-btn" onClick={() => setShowSettings(true)} title="Settings">
+                  ⚙️
+                </button>
               </div>
             </div>
 
-            {/* ── Idle / menu screen ── */}
-            {ui.phase==='idle' && (
-              <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',pointerEvents:'auto',background:'rgba(0,0,0,0.42)',backdropFilter:'blur(5px)'}}>
-                <h1 style={{fontSize:'clamp(54px,9vw,120px)',fontWeight:'bold',color:'white',WebkitTextStroke:'4px #ff3333',textShadow:'0 5px 20px rgba(0,0,0,0.9)',margin:'0 0 12px',textAlign:'center',lineHeight:1.1}}>
-                  AR FRUIT NINJA
-                </h1>
-                <p style={{fontSize:'clamp(11px,1.4vw,17px)',color:'white',fontFamily:'"Press Start 2P"',maxWidth:'580px',textAlign:'center',lineHeight:2.1,marginBottom:'36px',padding:'0 16px'}}>
-                  Hold your hand in front of the camera and raise your index finger to slice!
-                </p>
+            {/* ═════════════════════════════════════════════════════════
+               MAIN MENU TITLE SCREEN
+               ═════════════════════════════════════════════════════════ */}
+            {uiState.phase === 'idle' && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', background: 'radial-gradient(circle at center, rgba(13, 9, 7, 0.42) 0%, rgba(5, 3, 2, 0.75) 100%)', backdropFilter: 'blur(4px)', padding: '20px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '14px', fontFamily: '"Cinzel", serif', letterSpacing: '8px', color: '#f59e0b', marginBottom: '2px' }}>
+                    AI HAND TRACKING DOJO
+                  </div>
+                  <h1 style={{ fontSize: 'clamp(52px, 9vw, 110px)', fontWeight: '900', color: '#ffffff', textShadow: '0 6px 25px rgba(0,0,0,0.9), 0 0 40px rgba(245, 158, 11, 0.7)', lineHeight: 1.05, margin: 0, WebkitTextStroke: '2px #b45309' }}>
+                    AR FRUIT NINJA
+                  </h1>
+                </div>
 
-                {camErr ? (
-                  <div style={{color:'#f87171',background:'rgba(0,0,0,0.85)',padding:'24px 32px',borderRadius:'16px',textAlign:'center',fontSize:'15px',fontFamily:'"Press Start 2P"',lineHeight:1.9}}>
-                    Camera access denied.<br/>Please enable camera permissions to play.
-                  </div>
-                ) : isReady ? (
-                  <div style={{display:'flex',gap:'22px',marginTop:'8px',flexWrap:'wrap',justifyContent:'center'}}>
-                    <button className="btn btn-classic" onClick={() => startGame('classic')}>CLASSIC</button>
-                    <button className="btn btn-zen"     onClick={() => startGame('zen')}>ZEN</button>
-                    <button className="btn btn-arcade"  onClick={() => startGame('arcade')}>ARCADE</button>
-                  </div>
-                ) : (
-                  <div style={{fontSize:'18px',color:'#facc15',fontFamily:'"Press Start 2P"',animation:'pulse 1.6s infinite'}}>
-                    Loading AI Models…
-                  </div>
-                )}
+                {/* Mode Select Buttons */}
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '20px' }}>
+                  <button className="ninja-btn ninja-btn-classic" onClick={() => startGame('classic')}>
+                    <span>🗡️ CLASSIC</span>
+                  </button>
+                  <button className="ninja-btn ninja-btn-zen" onClick={() => startGame('zen')}>
+                    <span>🧘 ZEN (90s)</span>
+                  </button>
+                  <button className="ninja-btn ninja-btn-arcade" onClick={() => startGame('arcade')}>
+                    <span>⚡ ARCADE (60s)</span>
+                  </button>
+                  <button className="ninja-btn ninja-btn-duel" onClick={() => startGame('duel')}>
+                    <span>⚔️ 1v1 DUEL</span>
+                  </button>
+                </div>
+
+                {/* Quick Shortcuts */}
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <button className="ninja-btn ninja-btn-secondary" onClick={() => setShowShop(true)}>
+                    <span>🛒 SHOP</span>
+                  </button>
+                  <button className="ninja-btn ninja-btn-secondary" onClick={() => setShowLeaderboard(true)}>
+                    <span>🏆 RANKS</span>
+                  </button>
+                  <button className="ninja-btn ninja-btn-secondary" onClick={() => setShowQuests(true)}>
+                    <span>📜 QUESTS</span>
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* ── Game-over screen ── */}
-            {ui.phase==='gameover' && (
-              <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',pointerEvents:'auto',background:'rgba(0,0,0,0.72)',backdropFilter:'blur(8px)'}}>
-                <h2 style={{fontSize:'clamp(54px,8vw,100px)',fontWeight:'bold',color:'#ef4444',WebkitTextStroke:'4px #880000',textShadow:'0 0 40px #ff0000',margin:'0 0 6px'}}>
-                  GAME OVER
-                </h2>
-                <div style={{fontSize:'52px',color:'white',WebkitTextStroke:'2px #ff9900',fontWeight:'bold',marginBottom:'30px'}}>
-                  SCORE: {ui.score}
-                </div>
+            {/* ═════════════════════════════════════════════════════════
+               LEADERBOARDS MODAL
+               ═════════════════════════════════════════════════════════ */}
+            {showLeaderboard && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', padding: '20px', zIndex: 30 }}>
+                <div className="scroll-panel" style={{ width: '100%', maxWidth: '680px', maxHeight: '85vh', overflowY: 'auto', padding: '32px 28px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h3 style={{ fontSize: '36px', color: '#fbbf24', margin: 0 }}>🏆 DOJO LEADERBOARDS</h3>
+                    <button className="icon-btn" onClick={() => setShowLeaderboard(false)}>✕</button>
+                  </div>
 
-                {/* Stats grid */}
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px',marginBottom:'36px',width:'100%',maxWidth:'580px',padding:'0 16px'}}>
-                  {[
-                    {label:'FRUITS SLICED', value:ui.stats.sliced,    color:'white'},
-                    {label:'FRUITS MISSED', value:ui.stats.missed,    color:'white'},
-                    {label:'MAX COMBO',     value:ui.stats.maxCombo,  color:'white'},
-                    {label:'BEST SCORE',    value:ui.highScore,       color:'#ffcc00'},
-                  ].map(({label,value,color}) => (
-                    <div key={label} style={{background:'rgba(0,0,0,0.6)',padding:'16px',borderRadius:'12px',border:'1px solid rgba(255,255,255,0.2)',textAlign:'center'}}>
-                      <div style={{fontSize:'9px',color:'#9ca3af',fontFamily:'"Press Start 2P"',marginBottom:'10px',lineHeight:1.7}}>{label}</div>
-                      <div style={{fontSize:'46px',color,fontFamily:'Boogaloo'}}>{value}</div>
+                  {/* Mode Tabs */}
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                    {['classic', 'zen', 'arcade'].map(m => (
+                      <button
+                        key={m}
+                        className={`ninja-btn ${lbMode === m ? 'ninja-btn-classic' : 'ninja-btn-secondary'}`}
+                        style={{ fontSize: '16px', padding: '8px 16px', flex: 1 }}
+                        onClick={() => setLbMode(m)}
+                      >
+                        {m.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Leaderboard Table */}
+                  <table className="ninja-table">
+                    <thead>
+                      <tr>
+                        <th>RANK</th>
+                        <th>NINJA</th>
+                        <th>SCORE</th>
+                        <th>MAX COMBO</th>
+                        <th>SLICED</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(leaderboards[lbMode] || []).map((row, idx) => (
+                        <tr key={idx} style={{ background: row.username === nickname ? 'rgba(245, 158, 11, 0.2)' : 'transparent' }}>
+                          <td style={{ color: idx === 0 ? '#fbbf24' : idx === 1 ? '#e2e8f0' : idx === 2 ? '#d97706' : '#94a3b8', fontWeight: 'bold' }}>
+                            {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${row.rank}`}
+                          </td>
+                          <td style={{ fontWeight: 'bold', color: row.username === nickname ? '#fde68a' : '#ffffff' }}>
+                            {row.username} {row.username === nickname && '(YOU)'}
+                          </td>
+                          <td style={{ color: '#fbbf24', fontWeight: 'bold' }}>{row.score}</td>
+                          <td>{row.maxCombo}x</td>
+                          <td>{row.sliced}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ═════════════════════════════════════════════════════════
+               DOJO SHOP MODAL
+               ═════════════════════════════════════════════════════════ */}
+            {showShop && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', padding: '20px', zIndex: 30 }}>
+                <div className="scroll-panel" style={{ width: '100%', maxWidth: '720px', maxHeight: '85vh', overflowY: 'auto', padding: '32px 28px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div>
+                      <h3 style={{ fontSize: '36px', color: '#fbbf24', margin: 0 }}>🛒 DOJO ARMORY & SHOP</h3>
+                      <div style={{ color: '#fde68a', fontSize: '18px', marginTop: '4px' }}>YOUR BALANCE: 🪙 {coins} COINS</div>
                     </div>
-                  ))}
-                </div>
+                    <button className="icon-btn" onClick={() => setShowShop(false)}>✕</button>
+                  </div>
 
-                <button className="btn btn-menu" onClick={() => { gamePhase.current='idle'; syncUi(); }}>
-                  MAIN MENU
-                </button>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+                    {Object.keys(BLADES).map(k => {
+                      const item = { id: k, type: 'blade', ...BLADES[k] };
+                      const isUnlocked = unlockedItems.includes(item.id) || item.price === 0;
+                      const isEquipped = activeBlade === item.id;
+                      return (
+                        <div key={item.id} className="blade-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            <span style={{ fontSize: '36px' }}>{item.icon}</span>
+                            <div>
+                              <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fde68a' }}>{item.name}</div>
+                              <div style={{ fontSize: '13px', color: '#94a3b8' }}>{item.desc}</div>
+                            </div>
+                          </div>
+
+                          <div>
+                            {isEquipped ? (
+                              <div style={{ background: '#22c55e', color: '#000', padding: '6px 14px', borderRadius: '9999px', fontSize: '11px', fontFamily: '"Press Start 2P"', fontWeight: 'bold' }}>
+                                EQUIPPED
+                              </div>
+                            ) : isUnlocked ? (
+                              <button className="ninja-btn ninja-btn-secondary" style={{ fontSize: '14px', padding: '6px 16px' }} onClick={() => handleEquipShopItem(item.id, 'blade')}>
+                                EQUIP
+                              </button>
+                            ) : (
+                              <button
+                                className="ninja-btn ninja-btn-classic"
+                                style={{ fontSize: '14px', padding: '6px 16px', opacity: coins >= item.price ? 1 : 0.5 }}
+                                onClick={() => handleBuyShopItem(item)}
+                              >
+                                🪙 {item.price}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ═════════════════════════════════════════════════════════
+               DAILY QUESTS MODAL
+               ═════════════════════════════════════════════════════════ */}
+            {showQuests && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', padding: '20px', zIndex: 30 }}>
+                <div className="scroll-panel" style={{ width: '100%', maxWidth: '640px', maxHeight: '85vh', overflowY: 'auto', padding: '32px 28px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '36px', color: '#fbbf24', margin: 0 }}>📜 DAILY DOJO QUESTS</h3>
+                    <button className="icon-btn" onClick={() => setShowQuests(false)}>✕</button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {quests.map(q => (
+                      <div key={q.id} style={{ background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ flex: 1, marginRight: '16px' }}>
+                          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#fde68a' }}>{q.title}</div>
+                          <div style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '6px' }}>{q.desc}</div>
+                          <div style={{ background: 'rgba(255,255,255,0.1)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ width: `${Math.min(100, (q.current / q.target) * 100)}%`, height: '100%', background: '#22c55e' }}></div>
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '4px' }}>
+                            {q.current} / {q.target} ({q.rewardCoins} Coins)
+                          </div>
+                        </div>
+
+                        <div>
+                          {q.claimed ? (
+                            <span style={{ color: '#22c55e', fontSize: '12px', fontFamily: '"Press Start 2P"' }}>CLAIMED</span>
+                          ) : q.completed ? (
+                            <button className="ninja-btn ninja-btn-classic" style={{ fontSize: '14px', padding: '8px 16px' }} onClick={() => handleClaimQuest(q.id)}>
+                              CLAIM!
+                            </button>
+                          ) : (
+                            <span style={{ color: '#94a3b8', fontSize: '12px', fontFamily: '"Press Start 2P"' }}>IN PROGRESS</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ═════════════════════════════════════════════════════════
+               DOJO SETTINGS MODAL
+               ═════════════════════════════════════════════════════════ */}
+            {showSettings && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', padding: '20px', zIndex: 30 }}>
+                <div className="scroll-panel" style={{ width: '100%', maxWidth: '600px', maxHeight: '85vh', overflowY: 'auto', padding: '32px 28px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '36px', color: '#fbbf24', margin: 0 }}>⚙️ DOJO SETTINGS</h3>
+                    <button className="icon-btn" onClick={() => setShowSettings(false)}>✕</button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    
+                    {/* Ninja Nickname */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '18px', color: '#fde68a', marginBottom: '6px' }}>NINJA NICKNAME</label>
+                      <input
+                        type="text"
+                        value={nickname}
+                        onChange={e => {
+                          setNickname(e.target.value);
+                          localStorage.setItem('fn_nickname', e.target.value);
+                        }}
+                        style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.5)', border: '2px solid #b45309', borderRadius: '8px', color: '#fff', fontSize: '18px', outline: 'none' }}
+                      />
+                    </div>
+
+                    {/* SFX Volume */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '18px', color: '#fde68a' }}>SFX VOLUME</span>
+                        <span style={{ color: '#fbbf24' }}>{Math.round(sfxVol * 100)}%</span>
+                      </div>
+                      <input
+                        type="range" min="0" max="1" step="0.05" value={sfxVol}
+                        onChange={e => {
+                          const v = parseFloat(e.target.value);
+                          setSfxVol(v);
+                          sound.setSfxVolume(v);
+                        }}
+                      />
+                    </div>
+
+                    {/* BGM Volume */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '18px', color: '#fde68a' }}>JAPANESE KOTO BGM</span>
+                        <span style={{ color: '#fbbf24' }}>{Math.round(bgmVol * 100)}%</span>
+                      </div>
+                      <input
+                        type="range" min="0" max="1" step="0.05" value={bgmVol}
+                        onChange={e => {
+                          const v = parseFloat(e.target.value);
+                          setBgmVol(v);
+                          sound.setMusicVolume(v);
+                        }}
+                      />
+                    </div>
+
+                    {/* Camera Feed Opacity */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '18px', color: '#fde68a' }}>AR CAMERA FEED OPACITY</span>
+                        <span style={{ color: '#fbbf24' }}>{Math.round(camOpacity * 100)}%</span>
+                      </div>
+                      <input
+                        type="range" min="0" max="1" step="0.05" value={camOpacity}
+                        onChange={e => setCamOpacity(parseFloat(e.target.value))}
+                      />
+                    </div>
+
+                    {/* Hand Skeleton Overlay */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '18px', color: '#fde68a' }}>HAND SKELETON OVERLAY</span>
+                      <button
+                        className={`ninja-btn ${showSkeleton ? 'ninja-btn-classic' : 'ninja-btn-secondary'}`}
+                        style={{ fontSize: '14px', padding: '6px 16px' }}
+                        onClick={() => setShowSkeleton(!showSkeleton)}
+                      >
+                        {showSkeleton ? 'ENABLED' : 'DISABLED'}
+                      </button>
+                    </div>
+
+                    {/* Dojo Theme */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '18px', color: '#fde68a', marginBottom: '8px' }}>DOJO THEME</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                        {[
+                          { id: 'wood', label: '🪵 Wood' },
+                          { id: 'bamboo', label: '🎋 Bamboo' },
+                          { id: 'night', label: '🌌 Night' },
+                        ].map(theme => (
+                          <button
+                            key={theme.id}
+                            className={`ninja-btn ${dojoBg === theme.id ? 'ninja-btn-classic' : 'ninja-btn-secondary'}`}
+                            style={{ fontSize: '14px', padding: '8px 10px' }}
+                            onClick={() => handleEquipShopItem(theme.id, 'dojo')}
+                          >
+                            {theme.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ═════════════════════════════════════════════════════════
+               GAME OVER SCREEN
+               ═════════════════════════════════════════════════════════ */}
+            {uiState.phase === 'gameover' && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', background: 'rgba(8, 4, 3, 0.85)', backdropFilter: 'blur(10px)', padding: '20px' }}>
+                <div className="scroll-panel" style={{ width: '100%', maxWidth: '640px', padding: '36px 32px', textAlign: 'center' }}>
+                  <h2 style={{ fontSize: 'clamp(44px, 7vw, 76px)', color: '#ef4444', textShadow: '0 0 30px rgba(239, 68, 68, 0.8)', margin: '0 0 6px', WebkitTextStroke: '2px #7f1d1d' }}>
+                    {duelState.inDuel ? (duelState.winner === nickname ? 'VICTORY!' : 'DEFEAT') : 'GAME OVER'}
+                  </h2>
+
+                  <div style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(245, 158, 11, 0.4)', marginBottom: '20px' }}>
+                    <div style={{ fontSize: '12px', fontFamily: '"Press Start 2P"', color: '#94a3b8', marginBottom: '6px' }}>FINAL SCORE</div>
+                    <div style={{ fontSize: '64px', fontWeight: 'bold', color: '#fbbf24', lineHeight: 1 }}>{uiState.score}</div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '24px' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '10px' }}>
+                      <div style={{ fontSize: '9px', fontFamily: '"Press Start 2P"', color: '#94a3b8' }}>FRUITS SLICED</div>
+                      <div style={{ fontSize: '32px', color: '#ffffff' }}>{uiState.stats.sliced}</div>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '10px' }}>
+                      <div style={{ fontSize: '9px', fontFamily: '"Press Start 2P"', color: '#94a3b8' }}>MAX COMBO</div>
+                      <div style={{ fontSize: '32px', color: '#f59e0b' }}>{uiState.stats.maxCombo}x</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+                    <button className="ninja-btn ninja-btn-classic" onClick={() => startGame(gameMode.current)}>
+                      <span>🔄 PLAY AGAIN</span>
+                    </button>
+                    <button className="ninja-btn ninja-btn-secondary" onClick={() => { gamePhase.current = 'idle'; syncUi(); }}>
+                      <span>🏠 MAIN MENU</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -723,7 +2193,7 @@
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<Game />);
+    ReactDOM.createRoot(document.getElementById('root')).render(<ARFruitNinjaApp />);
   </script>
 </body>
 </html>
