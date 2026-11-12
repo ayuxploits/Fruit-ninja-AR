@@ -26,7 +26,7 @@
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-Hands-00A5E0?style=for-the-badge&logo=google&logoColor=white)](https://developers.google.com/mediapipe)
 [![Canvas](https://img.shields.io/badge/Rendering-Canvas_2D-FF6F00?style=for-the-badge)](.)
 
-[**🚀 Play It**](https://ayuuxploits.github.io/Fruit-ninja-AR/) &nbsp;·&nbsp; [**🐛 Report Bug**](https://github.com/ayuuXploits/Fruit-Ninja-AR/issues/new?labels=bug&title=%5BBug%5D+) &nbsp;·&nbsp; [**✨ Request Feature**](https://github.com/ayuuXploits/Fruit-Ninja-AR/issues/new?labels=enhancement&title=%5BFeature%5D+)
+[**🚀 Play It**](https://ayuxploits.github.io/Fruit-ninja-AR/) &nbsp;·&nbsp; [**🐛 Report Bug**](https://github.com/ayuxploits/Fruit-Ninja-AR/issues/new?labels=bug&title=%5BBug%5D+) &nbsp;·&nbsp; [**✨ Request Feature**](https://github.com/ayuxploits/Fruit-Ninja-AR/issues/new?labels=enhancement&title=%5BFeature%5D+)
 
 <br/>
 
@@ -107,7 +107,7 @@ Everything — the MediaPipe setup, React component, canvas game loop, particle 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/ayuuXploits/Fruit-Ninja-AR.git
+git clone https://github.com/ayuxploits/Fruit-Ninja-AR.git
 cd Fruit-Ninja-AR
 
 
@@ -160,7 +160,7 @@ npx serve .
 
 ## 📄 License
 
-**Copyright © 2026 ayuuXploits. All rights reserved.**
+**Copyright © 2026 ayuxploits. All rights reserved.**
 
 Licensed under the [MIT License](./LICENSE).
 
@@ -168,6 +168,6 @@ Licensed under the [MIT License](./LICENSE).
 
 <div align="center">
 
-Built with ❤️ by [ayuuXploits](https://github.com/ayuuXploits)
+Built with ❤️ by [ayuxploits](https://github.com/ayuxploits)
 
 </div>
